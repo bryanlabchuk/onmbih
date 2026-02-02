@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/ui-bar.css">
   <link rel="stylesheet" href="css/progression-map.css">
   <link rel="stylesheet" href="css/menu.css">
+  <link rel="stylesheet" href="css/tube-shop.css">
   
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
@@ -609,6 +610,7 @@
     import { ProgressionMap } from './js/core/progressionMap.js';
     import { getDifficultySettings, NODE_TYPES } from './js/data/townMap.js';
     import { TOWNSFOLK } from './js/data/townsfolk.js';
+    import { TubeShopUI } from './js/core/tubeShopUI.js';
     
     // Make game globally accessible for debugging
     window.game = game;
@@ -1031,30 +1033,120 @@
       
       // Handle store node
       function handleStoreNode(node) {
-        // Open upgrade modal
+        // Initialize tube shop
+        const tubeShop = new TubeShopUI(game);
+        tubeShop.init(game.playerLevel || 1);
+        
+        // Open upgrade modal with tabs
         const modal = document.getElementById('modal-overlay');
         modal.style.display = 'flex';
         modal.innerHTML = `
-          <div class="modal" style="max-width: 750px; max-height: 85vh; overflow-y: auto;">
+          <div class="modal" style="max-width: 850px; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
               <h3>🏪 ${node.locationName}</h3>
               <button class="modal-close" id="close-store-modal">&times;</button>
             </div>
-            <div class="workshop-intro">
-              <p>📚 <strong>Research Points:</strong> <span style="color: var(--ghost-glow); font-size: 1.2em;">${game.research}</span></p>
-              ${node.rewards.discount ? `<p style="color: var(--spirit-green);">🏷️ ${node.rewards.discount}% discount on upgrades!</p>` : ''}
+            
+            <div class="store-tabs">
+              <button class="store-tab active" data-tab="tubes">🧪 Dice Tubes</button>
+              <button class="store-tab" data-tab="workshop">🔧 Workshop</button>
+              <button class="store-tab" data-tab="inventory">📦 Inventory</button>
             </div>
-            <div id="dice-inventory-content" style="padding: 0 20px 20px;"></div>
+            
+            <div class="store-tab-content" id="tab-tubes">
+              <div id="tube-shop-container"></div>
+            </div>
+            
+            <div class="store-tab-content" id="tab-workshop" style="display: none;">
+              <div class="workshop-intro">
+                <p>📚 <strong>Research Points:</strong> <span style="color: var(--ghost-glow); font-size: 1.2em;">${game.research}</span></p>
+                ${node.rewards.discount ? `<p style="color: var(--spirit-green);">🏷️ ${node.rewards.discount}% discount!</p>` : ''}
+              </div>
+              <div id="dice-inventory-content" style="padding: 0 20px 20px;"></div>
+            </div>
+            
+            <div class="store-tab-content" id="tab-inventory" style="display: none;">
+              <div class="tube-inventory">
+                <h4 style="color: var(--ghost-glow); margin-bottom: 15px;">📦 Collected Upgrades</h4>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Apply these to your dice in the Workshop tab.</p>
+                <div id="tube-inventory-items"></div>
+              </div>
+            </div>
+            
             <div style="padding: 20px; border-top: 1px solid var(--border-color);">
               <button class="btn btn-primary" id="leave-store" style="width: 100%;">Leave Store</button>
             </div>
           </div>
         `;
         
-        // Render dice inventory
+        // Render tube shop
+        tubeShop.render(document.getElementById('tube-shop-container'));
+        
+        // Render dice workshop
         if (diceUI) {
           diceUI.renderInventoryPanel(document.getElementById('dice-inventory-content'));
         }
+        
+        // Render tube inventory
+        renderTubeInventory();
+        
+        function renderTubeInventory() {
+          const container = document.getElementById('tube-inventory-items');
+          if (!container) return;
+          
+          const inv = game.tubeInventory || {};
+          let html = '';
+          
+          const categories = [
+            { key: 'faceUpgrades', name: 'Face Upgrades', icon: '🔢' },
+            { key: 'dyes', name: 'Dyes', icon: '🎨' },
+            { key: 'molds', name: 'Die Molds', icon: '🎲' },
+            { key: 'modifiers', name: 'Enchantments', icon: '⚡' },
+            { key: 'newDice', name: 'New Dice', icon: '✨' }
+          ];
+          
+          categories.forEach(cat => {
+            const items = inv[cat.key] || [];
+            if (items.length > 0) {
+              html += `
+                <div class="inv-category">
+                  <h5>${cat.icon} ${cat.name} (${items.length})</h5>
+                  <div class="inv-items">
+                    ${items.map(item => `
+                      <div class="inv-item">
+                        <span class="inv-icon">${item.icon}</span>
+                        <span class="inv-name">${item.name}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+            }
+          });
+          
+          if (!html) {
+            html = '<p style="color: var(--text-muted); text-align: center; padding: 30px;">No items collected yet. Buy some Dice Tubes!</p>';
+          }
+          
+          container.innerHTML = html;
+        }
+        
+        // Tab switching
+        modal.querySelectorAll('.store-tab').forEach(tab => {
+          tab.onclick = () => {
+            modal.querySelectorAll('.store-tab').forEach(t => t.classList.remove('active'));
+            modal.querySelectorAll('.store-tab-content').forEach(c => c.style.display = 'none');
+            
+            tab.classList.add('active');
+            const tabId = tab.dataset.tab;
+            document.getElementById('tab-' + tabId).style.display = 'block';
+            
+            // Refresh inventory when switching to it
+            if (tabId === 'inventory') {
+              renderTubeInventory();
+            }
+          };
+        });
         
         // Close handlers - show continue button after leaving store
         document.getElementById('close-store-modal')?.addEventListener('click', () => {

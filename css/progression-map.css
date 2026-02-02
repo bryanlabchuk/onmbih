@@ -409,6 +409,8 @@
   padding: 0;
   z-index: 200;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  /* Needed for tier badge positioning */
+  overflow: visible;
   overflow: hidden;
   pointer-events: auto;
 }
@@ -420,6 +422,18 @@
   padding: 15px;
   background: var(--bg-medium);
   border-bottom: 3px solid;
+}
+
+.preview-tier-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--bg-darkest);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
 }
 
 .preview-icon {

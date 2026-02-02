@@ -19,6 +19,9 @@ export class ProgressionMap {
     this.generator = new MapGenerator(seed);
     this.map = this.generator.generate(7);
     
+    // Initialize tier tracking
+    this.map.highestCompletedTier = -1; // Nothing completed yet
+    
     // Mark start node as available
     const startNode = this.map.nodes[this.map.currentNodeId];
     startNode.available = true;
@@ -57,22 +60,57 @@ export class ProgressionMap {
     node.completed = true;
     this.map.completedNodes.add(nodeId);
     this.map.availableNodes.delete(nodeId);
+    
+    // Track highest completed tier
+    if (node.tier > (this.map.highestCompletedTier || -1)) {
+      this.map.highestCompletedTier = node.tier;
+    }
 
-    // Unlock connected nodes
-    console.log('Unlocking connected nodes:', node.connections.out);
-    node.connections.out.forEach(outId => {
-      const outNode = this.map.nodes[outId];
-      if (outNode && !outNode.completed) {
-        outNode.available = true;
-        this.map.availableNodes.add(outId);
-        console.log('Unlocked node:', outId, outNode.locationName);
-      }
-    });
+    // Only unlock nodes in the NEXT tier (tier + 1) if ALL requirements are met
+    const nextTier = node.tier + 1;
+    
+    // Clear all available nodes first (enforce strict tier progression)
+    this.map.availableNodes.clear();
+    
+    // Find all nodes in the next tier that are connected from completed nodes
+    if (nextTier < this.map.tiers.length) {
+      const nextTierNodes = this.map.tiers[nextTier];
+      
+      nextTierNodes.forEach(nextNode => {
+        // Check if ANY incoming connection comes from a completed node
+        const hasCompletedParent = nextNode.connections.in.some(parentId => {
+          const parent = this.map.nodes[parentId];
+          return parent && parent.completed;
+        });
+        
+        if (hasCompletedParent && !nextNode.completed) {
+          nextNode.available = true;
+          this.map.availableNodes.add(nextNode.id);
+          console.log('Unlocked node:', nextNode.id, nextNode.locationName, 'in tier', nextTier);
+        }
+      });
+    }
 
     // Update current position
     this.map.currentNodeId = null; // Will be set when player selects next node
     
     console.log('Available nodes after completion:', Array.from(this.map.availableNodes));
+    console.log('Highest completed tier:', this.map.highestCompletedTier);
+  }
+
+  // Get the current tier the player should be on
+  getCurrentTier() {
+    return (this.map.highestCompletedTier || 0) + 1;
+  }
+
+  // Check if a node can be accessed (must be in next tier from highest completed)
+  canAccessNode(nodeId) {
+    const node = this.map.nodes[nodeId];
+    if (!node) return false;
+    if (node.completed) return false;
+    
+    const allowedTier = this.getCurrentTier();
+    return node.tier === allowedTier && this.map.availableNodes.has(nodeId);
   }
 
   // Move to a node
@@ -273,8 +311,10 @@ export class ProgressionMap {
 
     const nodeType = NODE_TYPES[node.type];
     const difficulty = getDifficultySettings(node.difficulty);
-    const isAvailable = this.map.availableNodes.has(node.id);
+    const isAvailable = this.canAccessNode(node.id);
     const isCompleted = node.completed;
+    const currentAllowedTier = this.getCurrentTier();
+    const isFutureTier = node.tier > currentAllowedTier;
 
     preview.innerHTML = `
       <div class="preview-header" style="border-color: ${nodeType.color}">
@@ -284,6 +324,8 @@ export class ProgressionMap {
           <span class="preview-type">${nodeType.icon} ${nodeType.name}</span>
         </div>
       </div>
+      
+      <div class="preview-tier-badge">Floor ${node.tier}</div>
       
       <p class="preview-description">${nodeType.description}</p>
       
@@ -322,8 +364,10 @@ export class ProgressionMap {
         </button>
       ` : isCompleted ? `
         <div class="preview-completed">✓ Completed</div>
+      ` : isFutureTier ? `
+        <div class="preview-locked">🔒 Floor ${node.tier} - Complete Floor ${currentAllowedTier} first</div>
       ` : `
-        <div class="preview-locked">🔒 Locked - Complete previous nodes first</div>
+        <div class="preview-locked">🔒 Complete a connected path to unlock</div>
       `}
     `;
 
@@ -438,12 +482,13 @@ export class ProgressionMap {
       return;
     }
     
-    if (!this.map.availableNodes.has(nodeId)) {
-      console.error('Node not available:', nodeId);
+    // Strict tier check - can only access nodes in the allowed tier
+    if (!this.canAccessNode(nodeId)) {
+      console.error('Node not accessible:', nodeId, 'Current tier allowed:', this.getCurrentTier(), 'Node tier:', node.tier);
       return;
     }
 
-    console.log('Moving to node:', node.locationName);
+    console.log('Moving to node:', node.locationName, 'Tier:', node.tier);
     this.moveToNode(nodeId);
     this.hide();
 
@@ -509,7 +554,8 @@ export class ProgressionMap {
       seed: this.map.seed,
       currentNodeId: this.map.currentNodeId,
       completedNodes: Array.from(this.map.completedNodes),
-      availableNodes: Array.from(this.map.availableNodes)
+      availableNodes: Array.from(this.map.availableNodes),
+      highestCompletedTier: this.map.highestCompletedTier
     };
   }
 
@@ -525,6 +571,7 @@ export class ProgressionMap {
     this.map.currentNodeId = state.currentNodeId;
     this.map.completedNodes = new Set(state.completedNodes || []);
     this.map.availableNodes = new Set(state.availableNodes || []);
+    this.map.highestCompletedTier = state.highestCompletedTier ?? -1;
 
     // Update node states
     Object.values(this.map.nodes).forEach(node => {
