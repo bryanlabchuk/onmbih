@@ -13,6 +13,7 @@
   );
   position: relative;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 /* Background atmosphere */
@@ -80,6 +81,7 @@
   overflow-x: hidden;
   padding: 20px;
   position: relative;
+  pointer-events: auto;
 }
 
 .map-canvas {
@@ -89,6 +91,7 @@
   padding: 40px 20px;
   min-height: 100%;
   position: relative;
+  pointer-events: auto;
 }
 
 /* SVG Connections */
@@ -186,6 +189,7 @@
   position: relative;
   transition: all 0.3s ease;
   z-index: 10;
+  pointer-events: auto;
 }
 
 .map-node::before {
@@ -403,9 +407,10 @@
   border: 2px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   padding: 0;
-  z-index: 100;
+  z-index: 200;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .preview-header {
@@ -488,10 +493,18 @@
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
 }
 
 .preview-travel-btn:hover {
   background: linear-gradient(180deg, #7ab3d7 0%, var(--ghost-blue) 100%);
+  transform: scale(1.02);
+}
+
+.preview-travel-btn:active {
+  transform: scale(0.98);
 }
 
 .preview-completed,

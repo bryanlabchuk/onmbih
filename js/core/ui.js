@@ -218,6 +218,73 @@ class UIRenderer {
     return card;
   }
 
+  // ===== RECRUITMENT (for Progression Map) =====
+
+  renderRecruitmentOptions(container, onComplete) {
+    if (!container) {
+      console.error('No container provided for recruitment options');
+      if (onComplete) onComplete();
+      return;
+    }
+    
+    // Generate available allies
+    const available = Object.values(TOWNSFOLK)
+      .filter(t => t.unlocked && !game.allies?.find(a => a.id === t.id));
+    
+    // Shuffle and take 3
+    const shuffled = available.sort(() => Math.random() - 0.5);
+    game.availableAllies = shuffled.slice(0, 3);
+    
+    container.innerHTML = '';
+    container.style.display = 'grid';
+    
+    // Check if player can recruit more
+    const canRecruit = (game.allies?.length || 0) < (game.maxAllies || 3);
+    
+    if (!canRecruit) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+          <h3 style="color: var(--candle-orange);">Party Full!</h3>
+          <p style="color: var(--text-secondary);">You cannot recruit more allies at your current level.</p>
+          <button class="btn btn-primary" id="recruitment-continue">Continue</button>
+        </div>
+      `;
+      document.getElementById('recruitment-continue')?.addEventListener('click', () => {
+        if (onComplete) onComplete();
+      });
+      return;
+    }
+    
+    // Show available allies
+    game.availableAllies.slice(0, 3).forEach(ally => {
+      const card = this.createAllyCard(ally);
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => {
+        audio.playClick();
+        if (game.recruitAlly(ally.id)) {
+          audio.playSuccess();
+          // Log the recruitment
+          window.uiBar?.logEvent(`Recruited ${ally.name}!`, 'success');
+          if (onComplete) onComplete();
+        }
+      });
+      container.appendChild(card);
+    });
+    
+    // Skip button
+    const skipContainer = document.createElement('div');
+    skipContainer.style.cssText = 'grid-column: 1 / -1; text-align: center; margin-top: 20px;';
+    skipContainer.innerHTML = `
+      <button class="btn" id="recruitment-skip">Skip Recruitment</button>
+    `;
+    container.appendChild(skipContainer);
+    
+    document.getElementById('recruitment-skip')?.addEventListener('click', () => {
+      audio.playClick();
+      if (onComplete) onComplete();
+    });
+  }
+
   // ===== RESEARCH PHASE =====
 
   showResearchPhase() {

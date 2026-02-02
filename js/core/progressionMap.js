@@ -47,24 +47,32 @@ export class ProgressionMap {
 
   // Complete a node and unlock connections
   completeNode(nodeId) {
+    console.log('Completing node:', nodeId);
     const node = this.map.nodes[nodeId];
-    if (!node) return;
+    if (!node) {
+      console.error('Node not found for completion:', nodeId);
+      return;
+    }
 
     node.completed = true;
     this.map.completedNodes.add(nodeId);
     this.map.availableNodes.delete(nodeId);
 
     // Unlock connected nodes
+    console.log('Unlocking connected nodes:', node.connections.out);
     node.connections.out.forEach(outId => {
       const outNode = this.map.nodes[outId];
       if (outNode && !outNode.completed) {
         outNode.available = true;
         this.map.availableNodes.add(outId);
+        console.log('Unlocked node:', outId, outNode.locationName);
       }
     });
 
     // Update current position
     this.map.currentNodeId = null; // Will be set when player selects next node
+    
+    console.log('Available nodes after completion:', Array.from(this.map.availableNodes));
   }
 
   // Move to a node
@@ -78,8 +86,12 @@ export class ProgressionMap {
 
   // Render the map overlay
   render() {
+    console.log('ProgressionMap.render() called');
     const overlay = document.getElementById('map-overlay');
-    if (!overlay) return;
+    if (!overlay) {
+      console.error('Map overlay not found in render()');
+      return;
+    }
 
     overlay.innerHTML = `
       <div class="progression-map-container">
@@ -320,53 +332,86 @@ export class ProgressionMap {
 
   // Bind event handlers
   bindEvents() {
-    // Close button
-    document.getElementById('close-progression-map')?.addEventListener('click', () => {
-      this.hide();
-    });
+    console.log('Binding progression map events...');
+    
+    const container = document.querySelector('.progression-map-container');
+    if (!container) {
+      console.error('Progression map container not found');
+      return;
+    }
+    
+    console.log('Container found, binding click events');
 
-    // Node click/hover
-    document.querySelectorAll('.map-node').forEach(nodeEl => {
-      nodeEl.addEventListener('click', (e) => {
+    // Close button - direct binding
+    const closeBtn = document.getElementById('close-progression-map');
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Close button clicked');
+        this.hide();
+      };
+    }
+
+    // Node click/hover - use event delegation for better reliability
+    container.onclick = (e) => {
+      console.log('Container clicked, target:', e.target.className);
+      
+      // Check for travel button
+      const travelBtn = e.target.closest('.preview-travel-btn');
+      if (travelBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const nodeId = travelBtn.dataset.nodeId;
+        console.log('Travel button clicked for node:', nodeId);
+        this.travelToNode(nodeId);
+        return;
+      }
+
+      // Check for node click
+      const nodeEl = e.target.closest('.map-node');
+      if (nodeEl) {
+        e.stopPropagation();
         const nodeId = nodeEl.dataset.nodeId;
+        console.log('Node clicked:', nodeId);
         this.selectNode(nodeId);
-      });
+        return;
+      }
 
-      nodeEl.addEventListener('mouseenter', (e) => {
+      // Check for close button
+      if (e.target.id === 'close-progression-map' || e.target.closest('.map-close-btn')) {
+        e.stopPropagation();
+        this.hide();
+        return;
+      }
+    };
+
+    // Node hover for preview
+    container.onmouseover = (e) => {
+      const nodeEl = e.target.closest('.map-node');
+      if (nodeEl) {
         const nodeId = nodeEl.dataset.nodeId;
         const node = this.map.nodes[nodeId];
         this.renderNodePreview(node);
-      });
-    });
-
-    // Travel button in preview
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('preview-travel-btn')) {
-        const nodeId = e.target.dataset.nodeId;
-        this.travelToNode(nodeId);
       }
-    });
-
-    // Click outside to deselect
-    document.querySelector('.map-canvas')?.addEventListener('click', (e) => {
-      if (e.target.classList.contains('map-canvas')) {
-        this.selectedNode = null;
-        document.querySelectorAll('.map-node').forEach(n => n.classList.remove('selected'));
-        document.getElementById('node-preview').style.display = 'none';
-      }
-    });
+    };
 
     // Escape to close
-    const escHandler = (e) => {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.isVisible) {
         this.hide();
       }
-    };
-    document.addEventListener('keydown', escHandler);
+    });
 
     // Draw connections after layout settles
     setTimeout(() => this.drawConnections(), 100);
-    window.addEventListener('resize', () => this.drawConnections());
+    window.addEventListener('resize', () => {
+      if (this.isVisible) {
+        this.drawConnections();
+      }
+    });
+    
+    console.log('Event binding complete');
   }
 
   // Select a node
@@ -385,36 +430,66 @@ export class ProgressionMap {
 
   // Travel to a node
   travelToNode(nodeId) {
+    console.log('travelToNode called with:', nodeId);
     const node = this.map.nodes[nodeId];
-    if (!node || !this.map.availableNodes.has(nodeId)) return;
+    
+    if (!node) {
+      console.error('Node not found:', nodeId);
+      return;
+    }
+    
+    if (!this.map.availableNodes.has(nodeId)) {
+      console.error('Node not available:', nodeId);
+      return;
+    }
 
+    console.log('Moving to node:', node.locationName);
     this.moveToNode(nodeId);
     this.hide();
 
     // Trigger callback
     if (this.onNodeSelect) {
+      console.log('Calling onNodeSelect callback');
       this.onNodeSelect(node);
+    } else {
+      console.error('No onNodeSelect callback defined!');
     }
   }
 
   // Show the map
   show() {
+    console.log('ProgressionMap.show() called');
     const overlay = document.getElementById('map-overlay');
-    if (overlay) {
-      this.render();
-      overlay.style.display = 'flex';
-      this.isVisible = true;
-
-      // Redraw connections after display
-      setTimeout(() => this.drawConnections(), 50);
+    if (!overlay) {
+      console.error('Map overlay element not found!');
+      return;
     }
+    
+    console.log('Map state:', this.map ? 'initialized' : 'NOT INITIALIZED');
+    if (this.map) {
+      console.log('Available nodes:', Array.from(this.map.availableNodes));
+    }
+    
+    this.render();
+    
+    // Force display with inline style to override any CSS
+    overlay.style.cssText = 'display: flex !important; opacity: 1; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(10, 12, 18, 0.98);';
+    overlay.classList.add('visible');
+    this.isVisible = true;
+
+    // Redraw connections after display
+    setTimeout(() => this.drawConnections(), 50);
+    
+    console.log('Map overlay displayed');
   }
 
   // Hide the map
   hide() {
     const overlay = document.getElementById('map-overlay');
     if (overlay) {
+      overlay.style.cssText = '';
       overlay.style.display = 'none';
+      overlay.classList.remove('visible');
       this.isVisible = false;
     }
   }
