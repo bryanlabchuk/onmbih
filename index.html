@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/ui-bar.css">
   <link rel="stylesheet" href="css/progression-map.css">
+  <link rel="stylesheet" href="css/menu.css">
   
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
@@ -24,45 +25,142 @@
 
   <div id="game-container">
     
-    <!-- TITLE SCREEN -->
+    <!-- TITLE SCREEN / MAIN MENU -->
     <div id="title-screen" class="title-screen">
-      <h1 class="main-title">Oh No My Boyfriend Is Haunted</h1>
-      <p class="subtitle">(sarcastic)</p>
-      
-      <div class="title-flavor">
-        <p>
-          Derek Blackwood seemed like the perfect boyfriend. Cute, sweet, and only 
-          <em>slightly</em> possessed by the vengeful spirits of his ancestors.
-        </p>
-        <p style="margin-top: 15px;">
-          Seven generations of Blackwoods haunt him. Seven spirits that must be banished.
-          Armed with nothing but dice, research, and the questionable help of the local 
-          townsfolk, you're going to save him.
-        </p>
-        <p style="margin-top: 15px;">
-          Or die trying. Probably die trying.
-        </p>
+      <div class="title-content">
+        <h1 class="main-title">Oh No My Boyfriend Is Haunted</h1>
+        <p class="subtitle">(sarcastic)</p>
+        
+        <div class="title-art">
+          <img src="assets/townsfolk/TeenBoy01.png" alt="Derek" class="derek-portrait"
+               onerror="this.style.display='none'">
+          <div class="title-ghosts">👻</div>
+        </div>
+        
+        <nav class="main-menu">
+          <button id="new-game-btn" class="menu-btn menu-btn-primary">
+            <span class="menu-icon">🎮</span>
+            <span class="menu-text">New Game</span>
+          </button>
+          <button id="continue-btn" class="menu-btn" disabled>
+            <span class="menu-icon">📂</span>
+            <span class="menu-text">Continue</span>
+          </button>
+          <button id="how-to-play-btn" class="menu-btn">
+            <span class="menu-icon">📖</span>
+            <span class="menu-text">How to Play</span>
+          </button>
+          <button id="settings-btn" class="menu-btn">
+            <span class="menu-icon">⚙️</span>
+            <span class="menu-text">Settings</span>
+          </button>
+          <button id="credits-btn" class="menu-btn">
+            <span class="menu-icon">📜</span>
+            <span class="menu-text">Credits</span>
+          </button>
+        </nav>
+        
+        <p class="title-tagline">A roguelike dice & card game</p>
       </div>
-      
-      <div style="margin: 30px 0;">
-        <img src="assets/townsfolk/TeenBoy01.png" alt="Derek" 
-             style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--ghost-blue); box-shadow: 0 0 30px rgba(106, 163, 199, 0.4);"
-             onerror="this.style.display='none'">
+    </div>
+    
+    <!-- CHARACTER SELECTION SCREEN -->
+    <div id="character-select-screen" class="screen character-select-screen" style="display: none;">
+      <div class="screen-content">
+        <button class="back-btn" id="char-select-back">← Back</button>
+        
+        <h2 class="screen-title">Choose Your Starting Ally</h2>
+        <p class="screen-subtitle">This friend will join you from the beginning of your investigation</p>
+        
+        <div class="character-grid" id="character-grid">
+          <!-- Characters will be rendered here -->
+        </div>
+        
+        <div class="selected-character-preview" id="selected-preview" style="display: none;">
+          <div class="preview-content">
+            <img id="preview-portrait" src="" alt="" class="preview-portrait">
+            <div class="preview-info">
+              <h3 id="preview-name"></h3>
+              <p id="preview-title" class="preview-title"></p>
+              <p id="preview-ability" class="preview-ability"></p>
+              <p id="preview-flavor" class="preview-flavor"></p>
+            </div>
+          </div>
+          <button id="confirm-character-btn" class="btn btn-primary btn-large">
+            Start Investigation with <span id="confirm-name"></span>
+          </button>
+        </div>
       </div>
-      
-      <div class="btn-group">
-        <button id="start-btn" class="btn btn-primary">Begin Investigation</button>
-        <button id="how-to-play-btn" class="btn">How to Play</button>
+    </div>
+    
+    <!-- SETTINGS SCREEN -->
+    <div id="settings-screen" class="screen settings-screen" style="display: none;">
+      <div class="screen-content">
+        <button class="back-btn" id="settings-back">← Back</button>
+        
+        <h2 class="screen-title">⚙️ Settings</h2>
+        
+        <div class="settings-group">
+          <label class="setting-item">
+            <span class="setting-label">Music Volume</span>
+            <input type="range" id="music-volume" min="0" max="100" value="70">
+          </label>
+          <label class="setting-item">
+            <span class="setting-label">Sound Effects</span>
+            <input type="range" id="sfx-volume" min="0" max="100" value="100">
+          </label>
+          <label class="setting-item">
+            <span class="setting-label">Screen Shake</span>
+            <input type="checkbox" id="screen-shake" checked>
+          </label>
+          <label class="setting-item">
+            <span class="setting-label">Animation Speed</span>
+            <select id="anim-speed">
+              <option value="slow">Slow</option>
+              <option value="normal" selected>Normal</option>
+              <option value="fast">Fast</option>
+            </select>
+          </label>
+        </div>
+        
+        <div class="settings-actions">
+          <button class="btn" id="reset-settings">Reset to Default</button>
+        </div>
       </div>
-      
-      <div style="margin-top: 40px; font-size: 0.8rem; color: var(--text-muted); max-width: 500px;">
-        <p style="color: var(--ghost-glow); font-weight: bold;">A roguelike card & dice game</p>
-        <div style="margin-top: 15px; text-align: left; background: var(--bg-dark); padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-          <p style="margin-bottom: 8px;">🎲 <strong>Roll dice</strong> to gather research on the spirits</p>
-          <p style="margin-bottom: 8px;">🔒 <strong>Click dice</strong> to lock them between rolls</p>
-          <p style="margin-bottom: 8px;">👥 <strong>Recruit allies</strong> with special dice-modifying abilities</p>
-          <p style="margin-bottom: 8px;">👻 <strong>Challenge spirits</strong> by meeting their victory conditions</p>
-          <p>🏆 <strong>Banish all 7</strong> to free Derek from the family curse!</p>
+    </div>
+    
+    <!-- CREDITS SCREEN -->
+    <div id="credits-screen" class="screen credits-screen" style="display: none;">
+      <div class="screen-content">
+        <button class="back-btn" id="credits-back">← Back</button>
+        
+        <h2 class="screen-title">📜 Credits</h2>
+        
+        <div class="credits-content">
+          <div class="credit-section">
+            <h3>Oh No My Boyfriend Is Haunted</h3>
+            <p class="credit-subtitle">(sarcastic)</p>
+          </div>
+          
+          <div class="credit-section">
+            <h4>Game Design & Development</h4>
+            <p>Created with ❤️ and probably too much caffeine</p>
+          </div>
+          
+          <div class="credit-section">
+            <h4>Inspired By</h4>
+            <p>Balatro • Slay the Spire • Stephen King</p>
+          </div>
+          
+          <div class="credit-section">
+            <h4>Special Thanks</h4>
+            <p>To everyone who believes in haunted boyfriends</p>
+          </div>
+          
+          <div class="credit-section flavor">
+            <p>"Derek really is quite lovely once you get past the possession."</p>
+            <p class="attribution">— Anonymous Townsfolk</p>
+          </div>
         </div>
       </div>
     </div>
@@ -510,6 +608,7 @@
     import { UIBar } from './js/core/uiBar.js';
     import { ProgressionMap } from './js/core/progressionMap.js';
     import { getDifficultySettings, NODE_TYPES } from './js/data/townMap.js';
+    import { TOWNSFOLK } from './js/data/townsfolk.js';
     
     // Make game globally accessible for debugging
     window.game = game;
@@ -526,6 +625,15 @@
     
     // Challenge UI system
     let challengeUI = null;
+    
+    // Progression Map
+    let progressionMap = null;
+    
+    // UI Bar
+    let uiBar = null;
+    
+    // Selected starting character
+    let selectedStartingCharacter = null;
     
     function init3DDice() {
       if (diceInitialized) return;
@@ -596,6 +704,122 @@
       });
     }
     
+    // ===== SCREEN NAVIGATION =====
+    function showScreen(screenId) {
+      // Hide all screens
+      document.querySelectorAll('.title-screen, .screen, .game-main').forEach(screen => {
+        screen.style.display = 'none';
+      });
+      
+      // Show target screen
+      const target = document.getElementById(screenId);
+      if (target) {
+        target.style.display = 'flex';
+      }
+    }
+    
+    // ===== CHARACTER SELECTION =====
+    function renderCharacterSelection() {
+      const grid = document.getElementById('character-grid');
+      if (!grid) return;
+      
+      // Get starting-eligible characters (friends, not companions/pets)
+      const startingCharacters = Object.values(TOWNSFOLK).filter(t => 
+        t.unlocked && !t.isCompanion && !t.isBoyfriend
+      );
+      
+      grid.innerHTML = startingCharacters.map(char => `
+        <div class="character-card" data-char-id="${char.id}">
+          <img class="character-card-portrait" 
+               src="${char.image}" 
+               alt="${char.name}"
+               onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%231a1d26%22 width=%22100%%22 height=%22100%%22/><text x=%2250%%22 y=%2250%%22 fill=%22%239a9589%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2230%22>👤</text></svg>'">
+          <div class="character-card-name">${char.name}</div>
+          <div class="character-card-title">${char.title}</div>
+          <div class="character-card-ability">${char.ability.name}</div>
+        </div>
+      `).join('');
+      
+      // Bind click events
+      grid.querySelectorAll('.character-card').forEach(card => {
+        card.addEventListener('click', () => {
+          // Deselect all
+          grid.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+          // Select this one
+          card.classList.add('selected');
+          
+          const charId = card.dataset.charId;
+          const char = TOWNSFOLK[charId];
+          selectedStartingCharacter = char;
+          
+          // Show preview
+          showCharacterPreview(char);
+        });
+      });
+    }
+    
+    function showCharacterPreview(char) {
+      const preview = document.getElementById('selected-preview');
+      if (!preview) return;
+      
+      document.getElementById('preview-portrait').src = char.image;
+      document.getElementById('preview-name').textContent = char.name;
+      document.getElementById('preview-title').textContent = char.title;
+      document.getElementById('preview-ability').textContent = `${char.ability.name}: ${char.ability.description}`;
+      document.getElementById('preview-flavor').textContent = char.flavor || '';
+      document.getElementById('confirm-name').textContent = char.name;
+      
+      preview.style.display = 'block';
+    }
+    
+    // ===== START GAME =====
+    function startNewGame() {
+      if (!selectedStartingCharacter) {
+        alert('Please select a starting ally!');
+        return;
+      }
+      
+      // Reset game state
+      game.reset();
+      
+      // Add starting character as first ally
+      game.allies = [{ ...selectedStartingCharacter }];
+      game.logEvent('recruit', `${selectedStartingCharacter.name} joined your investigation!`);
+      
+      // Initialize progression map with new seed
+      progressionMap.init(Date.now());
+      
+      // Auto-complete the start node so tier 1 locations are available
+      const startNodeId = progressionMap.map.currentNodeId;
+      progressionMap.completeNode(startNodeId);
+      
+      // Show game screen
+      showScreen('game-screen');
+      
+      // Initialize 3D dice
+      setTimeout(() => {
+        init3DDice();
+        
+        // Update UI bar
+        setTimeout(() => {
+          if (uiBar) {
+            uiBar.refresh();
+            uiBar.logEvent(`${selectedStartingCharacter.name} is ready to help!`, 'success');
+          }
+          
+          // Update location display to show home
+          const locationName = document.getElementById('current-location-name');
+          if (locationName) locationName.textContent = 'Your House';
+          
+          // Show map - player starts at home, first destinations are available
+          setTimeout(() => {
+            progressionMap.show();
+            if (uiBar) uiBar.logEvent('You\'re at home. Choose your first destination...', 'info');
+          }, 500);
+        }, 300);
+      }, 200);
+    }
+    
     // Initialize UI when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
       ui.init();
@@ -605,11 +829,11 @@
       window.challengeUI = challengeUI;
       
       // Initialize Progression Map (Slay the Spire style)
-      const progressionMap = new ProgressionMap(game);
-      progressionMap.init(); // Generate the map
+      progressionMap = new ProgressionMap(game);
+      progressionMap.init(); // Generate initial map
       window.progressionMap = progressionMap;
       
-      // Keep legacy mapUI for compatibility but use progression map for navigation
+      // Keep legacy mapUI for compatibility
       mapUI = new MapUI(game);
       mapUI.setCurrentLocation('home');
       window.mapUI = mapUI;
@@ -680,15 +904,21 @@
         
         switch (node.type) {
           case 'start':
-            // Tutorial / safe zone
+            // Home / starting point - auto-complete and show map for next choice
             diceArea.style.display = 'block';
             cardGrid.style.display = 'none';
             game.transitionTo('town');
-            // Auto-complete start node
+            
+            // Brief pause then complete and show map with next options
             setTimeout(() => {
               progressionMap.completeNode(node.id);
-              window.uiBar?.logEvent('Ready to begin your investigation!', 'success');
-            }, 500);
+              window.uiBar?.logEvent('You\'re home. Where will you go first?', 'info');
+              
+              // Show map so player can choose next destination
+              setTimeout(() => {
+                progressionMap.show();
+              }, 500);
+            }, 800);
             break;
             
           case 'research':
@@ -854,8 +1084,8 @@
         diceUI = new DiceUI(game);
         window.diceUI = diceUI;
         
-        // Initialize UI Bar
-        const uiBar = new UIBar(game);
+        // Initialize UI Bar (use module-level variable)
+        uiBar = new UIBar(game);
         uiBar.init(diceUI, challengeUI);
         window.uiBar = uiBar;
         
@@ -863,22 +1093,55 @@
         diceUI.DIE_SHAPES = diceUI.DIE_SHAPES || {};
         diceUI.DIE_COLORS = diceUI.DIE_COLORS || {};
         
-        // Set up 3D dice view when game starts
-        const startBtn = document.getElementById('start-btn');
-        startBtn.addEventListener('click', () => {
-          // Small delay to allow game screen to become visible
-          setTimeout(() => {
-            init3DDice();
-            // Update UI bar after dice are initialized
-            setTimeout(() => {
-              uiBar.refresh();
-              // Show progression map after game initializes
-              setTimeout(() => {
-                progressionMap.show();
-                uiBar.logEvent('Choose your path through Blackwood...', 'info');
-              }, 500);
-            }, 300);
-          }, 200);
+        // ===== MAIN MENU BUTTON HANDLERS =====
+        
+        // New Game button -> Character Selection
+        document.getElementById('new-game-btn')?.addEventListener('click', () => {
+          audio.init();
+          audio.playClick();
+          renderCharacterSelection();
+          showScreen('character-select-screen');
+        });
+        
+        // Continue button (disabled for now - would load saved game)
+        document.getElementById('continue-btn')?.addEventListener('click', () => {
+          // TODO: Load saved game
+          audio.playClick();
+        });
+        
+        // Settings button
+        document.getElementById('settings-btn')?.addEventListener('click', () => {
+          audio.playClick();
+          showScreen('settings-screen');
+        });
+        
+        // Credits button
+        document.getElementById('credits-btn')?.addEventListener('click', () => {
+          audio.playClick();
+          showScreen('credits-screen');
+        });
+        
+        // Back buttons
+        document.getElementById('char-select-back')?.addEventListener('click', () => {
+          audio.playClick();
+          showScreen('title-screen');
+        });
+        
+        document.getElementById('settings-back')?.addEventListener('click', () => {
+          audio.playClick();
+          showScreen('title-screen');
+        });
+        
+        document.getElementById('credits-back')?.addEventListener('click', () => {
+          audio.playClick();
+          showScreen('title-screen');
+        });
+        
+        // Confirm character selection -> Start Game
+        document.getElementById('confirm-character-btn')?.addEventListener('click', () => {
+          audio.playClick();
+          audio.playSuccess();
+          startNewGame();
         });
         
         // Roll all button
@@ -1158,8 +1421,9 @@
       
       document.getElementById('start-from-help')?.addEventListener('click', () => {
         howToPlayScreen.style.display = 'none';
-        // Trigger the start button click
-        document.getElementById('start-btn').click();
+        // Go to character selection
+        renderCharacterSelection();
+        showScreen('character-select-screen');
       });
     });
   </script>
