@@ -116,11 +116,11 @@ export const TIER_CONFIG = {
     themes: ['home'],
     difficulty: 0
   },
-  1: { // Early game - 2-3 nodes
-    nodeCount: { min: 2, max: 3 },
-    types: ['research', 'recruit', 'mystery'],
-    weights: { research: 40, recruit: 35, mystery: 25 },
-    themes: ['school', 'friendsHouse', 'park'],
+  1: { // Starting locations (adjacent to Home) - always at least 2
+    nodeCount: { min: 2, max: 4 },
+    types: ['research', 'recruit', 'mystery', 'rest'],
+    weights: { research: 35, recruit: 30, mystery: 20, rest: 15 },
+    themes: ['school', 'friendsHouse', 'park', 'diner', 'store'],
     difficulty: 1
   },
   2: { // Building up - 3-4 nodes

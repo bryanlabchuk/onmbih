@@ -33,16 +33,32 @@ export class ProgressionMap {
     return this.map;
   }
 
-  // Force unlock tier 1 after start (call this when game begins)
+  // Whether the player has "left home" (start node completed) — tier 1 is then always available
+  hasLeftHome() {
+    const startNode = this.map?.tiers[0]?.[0];
+    return !!startNode?.completed;
+  }
+
+  // Force unlock starting locations (call when game begins) — at least 2 locations adjacent to Home
   unlockTier1() {
+    if (!this.map) return;
     const startNode = this.map.tiers[0]?.[0];
     if (startNode) {
       startNode.completed = true;
       this.map.completedNodes.add(startNode.id);
       this.map.highestCompletedTier = 0;
     }
+    // Explicitly add all tier 1 nodes so they are always available when leaving home
+    const tier1Nodes = this.map.tiers[1] || [];
+    tier1Nodes.forEach(node => {
+      if (!node.completed) {
+        node.available = true;
+        this.map.availableNodes.add(node.id);
+      }
+    });
+    // Also run full refresh so logic stays consistent
     this.refreshAvailableNodes();
-    console.log('Tier 1 unlocked. Available nodes:', Array.from(this.map.availableNodes));
+    console.log('Starting locations unlocked. Available:', Array.from(this.map.availableNodes));
   }
 
   // Get the current map state
@@ -196,14 +212,21 @@ export class ProgressionMap {
     };
   }
 
-  // Get highest unlocked tier
+  // Get highest unlocked tier (tier 1 = starting locations are always unlocked once you've left home)
   getHighestUnlockedTier() {
-    for (let tier = 6; tier >= 0; tier--) {
-      if (this.checkTierRequirement(tier).met) {
-        return tier;
+    // Once player has left home, tier 1 (starting locations) is always available
+    if (this.hasLeftHome()) {
+      let highest = 1;
+      for (let tier = 6; tier >= 2; tier--) {
+        if (this.checkTierRequirement(tier).met) {
+          highest = tier;
+          break;
+        }
       }
+      return highest;
     }
-    return 1; // Always can access tier 1
+    // Still at home: only tier 0 (home) is "unlocked"
+    return 0;
   }
 
   // Complete a node and update available nodes
@@ -236,22 +259,43 @@ export class ProgressionMap {
 
   // Refresh which nodes are available - ALL locations in an unlocked tier are available (no path logic)
   refreshAvailableNodes() {
+    if (!this.map) return;
+    
     this.map.availableNodes.clear();
     
-    const highestUnlocked = this.getHighestUnlockedTier();
-    console.log('Refreshing available nodes. Highest unlocked tier:', highestUnlocked);
+    // 1) When player has left home, tier 1 (starting locations) are ALWAYS available — at least 2 adjacent to Home
+    if (this.hasLeftHome()) {
+      const tier1Nodes = this.map.tiers[1] || [];
+      tier1Nodes.forEach(node => {
+        if (!node.completed) {
+          node.available = true;
+          this.map.availableNodes.add(node.id);
+        }
+      });
+    }
     
-    // Add every uncompleted node in every unlocked tier (tiers 0 and 1 always; 2+ if condition met)
-    for (let tier = 0; tier <= highestUnlocked; tier++) {
+    // 2) Tier 0 (Home): only available if not yet completed (so player can still be "at home")
+    const tier0Nodes = this.map.tiers[0] || [];
+    tier0Nodes.forEach(node => {
+      if (!node.completed) {
+        node.available = true;
+        this.map.availableNodes.add(node.id);
+      }
+    });
+    
+    // 3) Tiers 2+ require conditions; add all uncompleted nodes in each unlocked tier
+    const highestUnlocked = this.getHighestUnlockedTier();
+    for (let tier = 2; tier <= highestUnlocked; tier++) {
       const tierNodes = this.map.tiers[tier];
       if (!tierNodes) continue;
-      
       tierNodes.forEach(node => {
         if (node.completed) return;
         node.available = true;
         this.map.availableNodes.add(node.id);
       });
     }
+    
+    console.log('Available nodes:', Array.from(this.map.availableNodes), 'hasLeftHome:', this.hasLeftHome(), 'highestUnlocked:', highestUnlocked);
   }
 
   // Get the current tier the player should be on
@@ -722,10 +766,19 @@ export class ProgressionMap {
       return;
     }
     
-    // Refresh available nodes so newly met tier conditions show new locations
     if (this.map) {
       this.refreshAvailableNodes();
-      console.log('Available nodes:', Array.from(this.map.availableNodes));
+      // Safety: if player has left home but no nodes are available, force-add tier 1 (starting locations)
+      if (this.hasLeftHome() && this.map.availableNodes.size === 0) {
+        const tier1 = this.map.tiers[1] || [];
+        tier1.forEach(node => {
+          if (!node.completed) {
+            node.available = true;
+            this.map.availableNodes.add(node.id);
+          }
+        });
+        console.log('Safety: re-added starting locations. Available:', Array.from(this.map.availableNodes));
+      }
     }
     
     this.render();
