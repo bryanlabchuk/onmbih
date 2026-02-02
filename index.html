@@ -17,6 +17,9 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
 </head>
 <body>
+  <!-- Map Overlay -->
+  <div id="map-overlay"></div>
+
   <div id="game-container">
     
     <!-- TITLE SCREEN -->
@@ -68,6 +71,7 @@
       <header class="game-header" style="grid-column: 1 / -1;">
         <div class="game-title">
           <h1 style="font-size: 1.2rem;">Oh No My Boyfriend Is Haunted</h1>
+          <div id="current-location" class="current-location">📍 🏠 Your House</div>
         </div>
         
         <div class="stats-bar">
@@ -89,6 +93,7 @@
             <span id="spirits-value" class="stat-value spirits">0/7</span>
           </div>
           
+          <button id="map-btn" class="btn btn-map" style="padding: 8px 15px; font-size: 1rem;">🗺️ Map</button>
           <button id="audio-toggle" class="btn" style="padding: 8px 15px; font-size: 1.2rem;">🔊</button>
         </div>
       </header>
@@ -223,6 +228,7 @@
     import { ui } from './js/core/ui.js';
     import { audio } from './js/core/audio.js';
     import { DiceUI } from './js/core/diceUI.js';
+    import { MapUI } from './js/core/mapUI.js';
     
     // Make game globally accessible for debugging
     window.game = game;
@@ -232,6 +238,9 @@
     // Dice UI system
     let diceUI = null;
     let diceInitialized = false;
+    
+    // Map UI system
+    let mapUI = null;
     
     function init3DDice() {
       if (diceInitialized) return;
@@ -305,6 +314,43 @@
     // Initialize UI when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
       ui.init();
+      
+      // Initialize Map UI
+      mapUI = new MapUI(game);
+      mapUI.setCurrentLocation('home'); // Start at home
+      window.mapUI = mapUI;
+      
+      // Set up map location callback
+      mapUI.onLocationSelect = (location) => {
+        console.log('Traveling to:', location.name);
+        game.currentLocation = location;
+        game.logEvent('travel', `Traveled to ${location.name}`);
+        
+        // Update UI to show we're at a new location
+        const locationIndicator = document.getElementById('current-location');
+        if (locationIndicator) {
+          locationIndicator.innerHTML = `📍 ${location.icon} ${location.name}`;
+        }
+        
+        // Apply location bonuses to game modifiers
+        if (location.researchBonus) {
+          game.modifiers.researchMultiplier = location.researchBonus;
+        } else {
+          game.modifiers.researchMultiplier = 1;
+        }
+        
+        // Transition to appropriate phase based on activities
+        if (location.activities.includes('recruit')) {
+          game.transitionTo('town');
+        } else if (location.activities.includes('research')) {
+          game.transitionTo('research');
+        }
+      };
+      
+      // Map button
+      document.getElementById('map-btn')?.addEventListener('click', () => {
+        mapUI.show();
+      });
       
       // Initialize 3D Dice system
       try {

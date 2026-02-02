@@ -34,6 +34,7 @@ export class Game {
     this.phase = GAME_PHASES.TITLE;
     this.turn = 0;
     this.run = 1;
+    this.currentLocation = null;
     
     // Dice system - start with 5 standard dice
     this.dice = Array(5).fill(null).map(() => new Die('standard'));
