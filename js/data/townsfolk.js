@@ -402,6 +402,191 @@ export const TOWNSFOLK = {
     },
     researchSpecialty: ['medical'],
     unlocked: true
+  },
+
+  adultWoman06: {
+    id: 'adultWoman06',
+    name: 'Professor Judith Armitage',
+    title: 'Miskatonic University',
+    image: 'assets/townsfolk/AdultWoman06.png',
+    description: 'Teaches "Theoretical Folklore" at the university. Her theories aren\'t theoretical.',
+    flavor: '"The Necronomicon is NOT on the syllabus. Stop asking."',
+    rarity: 'rare',
+    ability: {
+      name: 'Academic Rigor',
+      description: 'All dice gain +1 to their maximum value. Triples count as research breakthroughs (+5).',
+      type: 'passive',
+      effect: { diceMaxBonus: 1, triplesBreakthrough: 5 }
+    },
+    researchSpecialty: ['academic', 'occult'],
+    unlocked: false
+  },
+
+  adultWomen04: {
+    id: 'adultWomen04',
+    name: 'Mayor Linda Derry',
+    title: 'Town Mayor',
+    image: 'assets/townsfolk/AdultWomen04.png',
+    description: 'Runs the town. Runs it right into the ground, some say, but she\'s trying.',
+    flavor: '"The tourism board said we should lean into the \'haunted\' thing. This is NOT what I meant."',
+    rarity: 'uncommon',
+    ability: {
+      name: 'Executive Order',
+      description: 'Once per challenge, swap any two dice values. Town locations give +2 research.',
+      type: 'active',
+      effect: { swapDicePerChallenge: 1, townLocationBonus: 2 }
+    },
+    researchSpecialty: ['town', 'politics'],
+    unlocked: false
+  },
+
+  adultMan07: {
+    id: 'adultMan07',
+    name: 'Randall Flagg',
+    title: 'Drifter',
+    image: 'assets/townsfolk/AdultMan07.png',
+    description: 'Just passing through. Says he\'s been "passing through" for about 300 years.',
+    flavor: '"I know things, friend. Dark things. Want to make a deal?"',
+    rarity: 'legendary',
+    ability: {
+      name: 'Dark Bargain',
+      description: 'Can set any die to 6, but another random die becomes 1. Immune to curse effects.',
+      type: 'active',
+      effect: { setDieToSix: true, randomDieToOne: true, curseImmunity: true }
+    },
+    researchSpecialty: ['dark', 'deals'],
+    unlocked: false
+  },
+
+  adultMan08: {
+    id: 'adultMan08',
+    name: 'Deputy Barnes',
+    title: 'Junior Deputy',
+    image: 'assets/townsfolk/AdultMan08.png',
+    description: 'New to the force. Still believes in rational explanations. Give him time.',
+    flavor: '"There HAS to be a logical explanation. There HAS to be. Right? ...Right?"',
+    rarity: 'common',
+    ability: {
+      name: 'By The Book',
+      description: 'Dice rolls are more consistent: 1s become 2s, 6s become 5s. +2 to research totals.',
+      type: 'passive',
+      effect: { normalizeExtremes: true, researchBonus: 2 }
+    },
+    researchSpecialty: ['investigation', 'evidence'],
+    unlocked: true
+  },
+
+  // ===== COMPANIONS =====
+  blackCat: {
+    id: 'blackCat',
+    name: 'Salem',
+    title: 'Nana Ruth\'s Cat',
+    image: 'assets/misc/CatBlack.png',
+    description: 'A black cat that follows you around. Unlucky for spirits, lucky for you.',
+    flavor: '*judges you silently* *knocks a die off the table* *judges you more*',
+    rarity: 'uncommon',
+    ability: {
+      name: 'Nine Lives',
+      description: 'Once per run, reroll ALL dice for free. 1s rolled by Salem become 7s.',
+      type: 'active',
+      effect: { freeRerollAll: 1, onesBecomeSevens: true }
+    },
+    researchSpecialty: ['familiar', 'luck'],
+    unlocked: false,
+    isCompanion: true
+  },
+
+  whiteCat: {
+    id: 'whiteCat',
+    name: 'Snowball',
+    title: 'The Other Cat',
+    image: 'assets/misc/CatWhite.png',
+    description: 'The yin to Salem\'s yang. Brings balance. Also knocks things off tables.',
+    flavor: '*purrs ominously* *stares at something you can\'t see*',
+    rarity: 'uncommon',
+    ability: {
+      name: 'Spirit Sight',
+      description: 'Reveals spirit weaknesses automatically. Pairs of dice gain +1 each.',
+      type: 'passive',
+      effect: { autoRevealWeakness: true, pairsBonus: 1 }
+    },
+    researchSpecialty: ['familiar', 'sight'],
+    unlocked: false,
+    isCompanion: true
+  },
+
+  dog: {
+    id: 'dog',
+    name: 'Cujo Jr.',
+    title: 'Good Boy (Mostly)',
+    image: 'assets/misc/Dog.png',
+    description: 'A very good boy who can sense evil. Barks at ghosts. Bites if necessary.',
+    flavor: '*whimpers at empty corner* *growls at your boyfriend* *wants belly rubs*',
+    rarity: 'common',
+    ability: {
+      name: 'Loyal Companion',
+      description: 'Prevents 1 sanity damage per challenge. Can "fetch" a discarded die once per run.',
+      type: 'passive',
+      effect: { preventDamage: 1, fetchDie: 1 }
+    },
+    researchSpecialty: ['protection', 'loyalty'],
+    unlocked: true,
+    isCompanion: true
+  },
+
+  scifiHero: {
+    id: 'scifiHero',
+    name: 'Captain Nova',
+    title: 'Time Traveler',
+    image: 'assets/misc/ScifiHero.png',
+    description: 'Claims to be from the future. Here to "prevent the Blackwood Incident." Very cryptic.',
+    flavor: '"In my timeline, this town is a crater. Let\'s... let\'s not do that."',
+    rarity: 'legendary',
+    ability: {
+      name: 'Temporal Mechanics',
+      description: 'Can "undo" one roll per challenge. See next 3 spirit cards before choosing.',
+      type: 'active',
+      effect: { undoRoll: 1, spiritForesight: 3 }
+    },
+    researchSpecialty: ['future', 'timeline'],
+    unlocked: false
+  },
+
+  // ===== COSTUME CHARACTERS =====
+  ghostCostume: {
+    id: 'ghostCostume',
+    name: 'Kenny Peterson',
+    title: 'Kid in Ghost Costume',
+    image: 'assets/misc/Ghost costume.png',
+    description: 'Just a kid in a ghost costume. But the REAL ghosts seem confused by him.',
+    flavor: '"Boo! ...Why aren\'t the actual ghosts scared of me? This is so unfair."',
+    rarity: 'common',
+    ability: {
+      name: 'Ghost Decoy',
+      description: 'Spirits sometimes attack Kenny instead (-2 damage). Adds 1 "spooky" die that only rolls 1 or 6.',
+      type: 'passive',
+      effect: { decoyDamageReduction: 2, spookyDie: true }
+    },
+    researchSpecialty: ['disguise', 'distraction'],
+    unlocked: true
+  },
+
+  horseCostume: {
+    id: 'horseCostume',
+    name: 'The Mystery Horse',
+    title: 'Two Kids in a Horse Costume',
+    image: 'assets/misc/Horse costume.png',
+    description: 'It\'s clearly two kids. Everyone pretends not to notice. It\'s a whole thing.',
+    flavor: '"Neigh! I mean... hello fellow humans. We are one horse."',
+    rarity: 'uncommon',
+    ability: {
+      name: 'Double Trouble',
+      description: 'Counts as 2 allies for bonuses. Roll 2 extra dice but must discard 2 lowest.',
+      type: 'passive',
+      effect: { countsAsTwo: true, extraDice: 2, discardLowest: 2 }
+    },
+    researchSpecialty: ['teamwork', 'disguise'],
+    unlocked: false
   }
 };
 

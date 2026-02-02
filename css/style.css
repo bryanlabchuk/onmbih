@@ -248,6 +248,20 @@ h3 { font-size: 1.25rem; }
   transform: translateX(5px);
 }
 
+.ally-card-mini.companion {
+  border-color: var(--spirit-green);
+}
+
+.ally-card-mini.companion:hover {
+  border-color: var(--spirit-green);
+  box-shadow: 0 0 15px rgba(74, 155, 106, 0.3);
+}
+
+.ally-card-mini.boyfriend {
+  border-color: var(--ghost-blue);
+  background: linear-gradient(135deg, var(--bg-medium) 0%, rgba(74, 124, 155, 0.1) 100%);
+}
+
 .ally-portrait-mini {
   width: 48px;
   height: 48px;
@@ -526,6 +540,42 @@ h3 { font-size: 1.25rem; }
 .card-rarity.uncommon { background: var(--rarity-uncommon); }
 .card-rarity.rare { background: var(--rarity-rare); }
 .card-rarity.legendary { background: var(--rarity-legendary); }
+.card-rarity.starter { background: var(--text-muted); }
+
+/* Companion cards - pets and special allies */
+.card.companion {
+  border-color: var(--spirit-green);
+}
+
+.card.companion:hover {
+  border-color: var(--spirit-green);
+  box-shadow: 0 15px 40px var(--shadow-dark), 0 0 20px rgba(74, 155, 106, 0.3);
+}
+
+.card.companion .card-portrait {
+  border-bottom-color: var(--spirit-green);
+}
+
+/* Boyfriend card - special styling */
+.card.boyfriend {
+  border-color: var(--ghost-blue);
+  box-shadow: 0 0 15px rgba(106, 163, 199, 0.2);
+}
+
+.card.boyfriend:hover {
+  border-color: var(--ghost-glow);
+  box-shadow: 0 15px 40px var(--shadow-dark), 0 0 25px rgba(106, 163, 199, 0.4);
+}
+
+/* Dice-effect ability highlight */
+.card-ability.dice-effect {
+  color: var(--candle-orange);
+  font-weight: 600;
+}
+
+.card-ability.dice-effect::before {
+  content: '🎲 ';
+}
 
 /* Spirit cards - darker, spookier */
 .card.spirit {

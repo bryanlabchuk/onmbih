@@ -156,8 +156,47 @@ export class Game {
       return die.roll();
     });
 
-    this.logEvent('roll', `Rolled: [${results.join(', ')}]`);
-    return results;
+    // Apply ally dice-modification effects
+    this.allies.forEach(ally => {
+      const effect = ally.ability.effect;
+      
+      // Deputy Barnes: normalize extremes (1s become 2s, 6s become 5s)
+      if (effect.normalizeExtremes) {
+        this.dice.forEach(die => {
+          if (!die.locked && die.currentValue === 1) die.currentValue = 2;
+          if (!die.locked && die.currentValue === 6) die.currentValue = 5;
+        });
+      }
+      
+      // Waitress: +1 to all dice showing 1
+      if (effect.onesBonus) {
+        this.dice.forEach(die => {
+          if (!die.locked && die.currentValue === 1) {
+            die.currentValue += effect.onesBonus;
+          }
+        });
+      }
+      
+      // Snowball (white cat): pairs bonus
+      if (effect.pairsBonus) {
+        const values = this.dice.map(d => d.currentValue);
+        const counts = {};
+        values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+        Object.entries(counts).forEach(([val, count]) => {
+          if (count >= 2) {
+            this.dice.forEach(die => {
+              if (die.currentValue === parseInt(val)) {
+                die.currentValue += effect.pairsBonus;
+              }
+            });
+          }
+        });
+      }
+    });
+
+    const finalResults = this.dice.map(d => d.currentValue);
+    this.logEvent('roll', `Rolled: [${finalResults.join(', ')}]`);
+    return finalResults;
   }
 
   lockDie(index) {
@@ -192,16 +231,34 @@ export class Game {
       research += straightLength * 2;
     }
     
+    // Count triples
+    const triples = this.countTriples(values);
+    
     // Apply ally bonuses
     this.allies.forEach(ally => {
-      if (ally.ability.effect.researchBonus) {
-        research += ally.ability.effect.researchBonus;
+      const effect = ally.ability.effect;
+      
+      if (effect.researchBonus) {
+        research += effect.researchBonus;
       }
-      if (ally.ability.effect.pairsDoubleForResearch && pairs > 0) {
+      if (effect.pairsDoubleForResearch && pairs > 0) {
         research += pairs * 2;
       }
-      if (ally.ability.effect.straightResearchBonus && straightLength >= 4) {
-        research += ally.ability.effect.straightResearchBonus;
+      if (effect.straightResearchBonus && straightLength >= 4) {
+        research += effect.straightResearchBonus;
+      }
+      // Professor Armitage: triples breakthrough
+      if (effect.triplesBreakthrough && triples > 0) {
+        research += triples * effect.triplesBreakthrough;
+        this.logEvent('breakthrough', `Research breakthrough! Triples bonus: +${triples * effect.triplesBreakthrough}`);
+      }
+      // Mayor: town location bonus
+      if (effect.townLocationBonus) {
+        research += effect.townLocationBonus;
+      }
+      // Discovery bonus (Marcus Chen)
+      if (effect.discoveryBonus) {
+        research += effect.discoveryBonus;
       }
     });
     
@@ -212,6 +269,12 @@ export class Game {
     this.logEvent('research_gain', `Gained ${research} research. Total: ${this.research}`);
     
     return research;
+  }
+
+  countTriples(values) {
+    const counts = {};
+    values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+    return Object.values(counts).filter(c => c >= 3).length;
   }
 
   // ===== SPIRIT SELECTION =====

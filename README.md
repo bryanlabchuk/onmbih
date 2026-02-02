@@ -52,20 +52,37 @@ onmbih/
 
 ## Characters
 
-### Townsfolk (Allies)
+### Townsfolk (26 Allies)
 - **Ms. Abigail Crane** - History teacher who knows where ALL the bodies are buried
 - **Dr. Eleanor Marsh** - MIT dropout turned paranormal researcher
 - **Donna Torrance** - Graveyard shift waitress who hears everything
 - **Raven Blackwood** - Derek's emo sister who claims she WANTS to be haunted
-- **And many more...**
+- **Randall Flagg** - Mysterious drifter who's been "passing through" for 300 years
+- **Professor Judith Armitage** - Miskatonic University professor (triples = breakthroughs!)
+- **Father Michael O'Brien** - Has performed 47 exorcisms this year. It's February.
+- **Dr. Herbert West** - Mortician who's very interested in the line between life and death
+- **And 18 more unique characters with dice-modifying abilities...**
 
-### Spirits (Bosses)
-- **Ezekiel Blackwood** - The Founding Father (Tier 1)
-- **Abigail Blackwood** - The Accused Witch (Tier 2)
-- **Lord Vladislav Blackwood** - The Vampire Immigrant (Tier 3)
-- **Pennywhistle Blackwood** - The Clown (Tier 3) 🎈
-- **Mr. Snuffles** - Derek's "Imaginary" Friend (Tier 2)
-- **And more ancestral nightmares...**
+### Companions (6 Special Allies)
+- **Salem** - Nana Ruth's black cat (1s become 7s!)
+- **Snowball** - The white cat (reveals spirit weaknesses)
+- **Cujo Jr.** - Good boy who prevents sanity damage
+- **Captain Nova** - Time traveler here to prevent "the Blackwood Incident"
+- **Kenny Peterson** - Kid in ghost costume (confuses real ghosts)
+- **The Mystery Horse** - Clearly two kids in a costume (counts as 2 allies)
+
+### Spirits (11 Bosses)
+- **Ezekiel Blackwood** - The Founding Father (Tier 1, Colonial)
+- **Abigail Blackwood** - The Accused Witch (Tier 2, Colonial)
+- **Eleanor Blackwood** - The Mourning Widow (Tier 1, Victorian)
+- **Cordelia Blackwood** - The Poisoner (Tier 2, Victorian)
+- **Lord Vladislav Blackwood** - The Vampire Immigrant (Tier 3, Victorian)
+- **Professor Thaddeus Blackwood** - The Mummy/Archaeologist (Tier 2, Early 20th)
+- **Pennywhistle Blackwood** - The Clown (Tier 3) 🎈 *We all float down here*
+- **The Blackwood Experiment** - Failed chemistry project (Tier 1, Modern)
+- **The Citrus Abomination** - Sentient lemonade stand (Tier 1, Modern)
+- **Mr. Snuffles** - Derek's "Imaginary" Friend (Tier 2, Modern)
+- **Old Yeller Blackwood** - The ghost dog who's still a good boy (Tier 1, Modern)
 
 ## Development
 

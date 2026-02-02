@@ -192,14 +192,26 @@ class UIRenderer {
 
   createAllyCard(ally) {
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = `card ${ally.isCompanion ? 'companion' : ''} ${ally.isBoyfriend ? 'boyfriend' : ''}`;
+    
+    // Determine type icon
+    let typeIcon = '👤';
+    if (ally.isCompanion) typeIcon = '🐾';
+    if (ally.isBoyfriend) typeIcon = '💕';
+    
+    // Highlight dice-modifying abilities
+    const hasDiceEffect = ally.ability.description.toLowerCase().includes('dice') || 
+                          ally.ability.description.toLowerCase().includes('roll') ||
+                          ally.ability.description.toLowerCase().includes('reroll');
+    
     card.innerHTML = `
       <span class="card-rarity ${ally.rarity}"></span>
-      <img class="card-portrait" src="${ally.image}" alt="${ally.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22140%22><rect fill=%22%231a1d26%22 width=%22100%%22 height=%22100%%22/><text x=%2250%%22 y=%2250%%22 fill=%22%239a9589%22 text-anchor=%22middle%22 dy=%22.3em%22>?</text></svg>'">
+      <span class="card-type" style="position: absolute; top: 8px; left: 8px; font-size: 1rem;">${typeIcon}</span>
+      <img class="card-portrait" src="${ally.image}" alt="${ally.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22180%22 height=%22140%22><rect fill=%22%231a1d26%22 width=%22100%%22 height=%22100%%22/><text x=%2250%%22 y=%2250%%22 fill=%22%239a9589%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2240%22>${typeIcon}</text></svg>'">
       <div class="card-content">
         <div class="card-name">${ally.name}</div>
         <div class="card-title">${ally.title}</div>
-        <div class="card-ability">${ally.ability.name}: ${ally.ability.description}</div>
+        <div class="card-ability ${hasDiceEffect ? 'dice-effect' : ''}">${ally.ability.name}: ${ally.ability.description}</div>
       </div>
     `;
     return card;
@@ -474,14 +486,27 @@ class UIRenderer {
       const values = game.dice.map(d => d.currentValue).filter(v => v !== null);
       const sum = values.reduce((a, b) => a + b, 0);
       const pairs = game.countPairs(values);
+      const triples = game.countTriples(values);
       const straight = game.longestStraight(values);
+      
+      // Calculate ally bonuses
+      let allyBonus = 0;
+      game.allies.forEach(ally => {
+        if (ally.ability.effect.researchBonus) allyBonus += ally.ability.effect.researchBonus;
+        if (ally.ability.effect.triplesBreakthrough && triples > 0) allyBonus += triples * ally.ability.effect.triplesBreakthrough;
+      });
+      
+      const bonuses = [];
+      if (pairs > 0) bonuses.push(`+${pairs * 2} pairs`);
+      if (triples > 0) bonuses.push(`+${triples * 3} triples`);
+      if (straight >= 3) bonuses.push(`+${straight * 2} straight`);
+      if (allyBonus > 0) bonuses.push(`+${allyBonus} allies`);
       
       display.innerHTML = `
         <div class="score-label">Current Research Value</div>
         <div class="score-value">${sum}</div>
-        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px;">
-          ${pairs > 0 ? `+${pairs * 2} (pairs) ` : ''}
-          ${straight >= 3 ? `+${straight * 2} (straight) ` : ''}
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 10px;">
+          ${bonuses.length > 0 ? bonuses.join(' • ') : 'Roll for bonuses!'}
         </div>
       `;
     } else if (type === 'challenge') {
@@ -659,15 +684,27 @@ class UIRenderer {
       return;
     }
     
-    list.innerHTML = game.allies.map(ally => `
-      <div class="ally-card-mini" data-id="${ally.id}">
-        <img class="ally-portrait-mini" src="${ally.image}" alt="${ally.name}" onerror="this.style.display='none'">
-        <div class="ally-info-mini">
-          <div class="ally-name-mini">${ally.name}</div>
-          <div class="ally-title-mini">${ally.title}</div>
+    list.innerHTML = game.allies.map(ally => {
+      let typeIcon = '👤';
+      let typeClass = '';
+      if (ally.isCompanion) { typeIcon = '🐾'; typeClass = 'companion'; }
+      if (ally.isBoyfriend) { typeIcon = '💕'; typeClass = 'boyfriend'; }
+      
+      const hasDiceEffect = ally.ability.description.toLowerCase().includes('dice') || 
+                            ally.ability.description.toLowerCase().includes('roll');
+      
+      return `
+        <div class="ally-card-mini ${typeClass}" data-id="${ally.id}" title="${ally.ability.name}: ${ally.ability.description}">
+          <span style="font-size: 0.8rem; margin-right: 5px;">${typeIcon}</span>
+          <img class="ally-portrait-mini" src="${ally.image}" alt="${ally.name}" onerror="this.style.display='none'">
+          <div class="ally-info-mini">
+            <div class="ally-name-mini">${ally.name}</div>
+            <div class="ally-title-mini">${ally.title}</div>
+            ${hasDiceEffect ? '<div style="font-size: 0.6rem; color: var(--candle-orange);">🎲 Dice Effect</div>' : ''}
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   updateAudioButton() {
