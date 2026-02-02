@@ -293,6 +293,45 @@
         <!-- Dice Rolling Area -->
         <div id="dice-area" class="dice-area" style="display: none;">
           
+          <!-- Location Environment Banner -->
+          <div id="location-environment" class="location-environment">
+            <div class="env-header">
+              <span id="env-icon" class="env-icon">🏠</span>
+              <span id="env-name" class="env-name">Your House</span>
+              <span id="env-type" class="env-type">Comfortable</span>
+            </div>
+            <div id="env-effects" class="env-effects">
+              <!-- Environment effects listed here -->
+            </div>
+          </div>
+          
+          <!-- Active Challenge Display -->
+          <div id="challenge-display" class="challenge-display" style="display: none;">
+            <div class="challenge-header">
+              <span id="challenge-tier" class="challenge-tier">⭐</span>
+              <h4 id="challenge-name">Challenge Name</h4>
+            </div>
+            <p id="challenge-description" class="challenge-desc">Description</p>
+            <div id="challenge-conditions" class="challenge-conditions">
+              <!-- Conditions listed here -->
+            </div>
+            <div class="challenge-reward">
+              <span>Reward:</span>
+              <span id="challenge-reward" class="reward-value">+10 Research</span>
+            </div>
+          </div>
+          
+          <!-- Player Level Display -->
+          <div id="player-level-display" class="player-level-display">
+            <span class="level-label">Level</span>
+            <span id="player-level" class="level-value">1</span>
+            <span id="player-title" class="level-title">Novice Investigator</span>
+            <div class="party-info">
+              <span>👥 Party:</span>
+              <span id="party-count">0</span>/<span id="party-max">3</span>
+            </div>
+          </div>
+          
           <!-- Dice Values Display -->
           <div class="dice-values-bar">
             <div id="dice-values-display" class="dice-values-display">
@@ -328,6 +367,7 @@
             
             <div class="dice-buttons">
               <button id="roll-all-3d" class="btn btn-primary btn-roll">🎲 Roll All</button>
+              <button id="new-challenge-btn" class="btn btn-challenge">📖 New Challenge</button>
               <button id="upgrade-dice-btn" class="btn btn-upgrade">⚙️ Upgrade Dice</button>
             </div>
             
@@ -392,6 +432,7 @@
     import { audio } from './js/core/audio.js';
     import { DiceUI } from './js/core/diceUI.js';
     import { MapUI } from './js/core/mapUI.js';
+    import { ChallengeUI } from './js/core/challengeUI.js';
     
     // Make game globally accessible for debugging
     window.game = game;
@@ -404,6 +445,9 @@
     
     // Map UI system
     let mapUI = null;
+    
+    // Challenge UI system
+    let challengeUI = null;
     
     function init3DDice() {
       if (diceInitialized) return;
@@ -478,6 +522,10 @@
     document.addEventListener('DOMContentLoaded', () => {
       ui.init();
       
+      // Initialize Challenge UI
+      challengeUI = new ChallengeUI(game);
+      window.challengeUI = challengeUI;
+      
       // Initialize Map UI
       mapUI = new MapUI(game);
       mapUI.setCurrentLocation('home'); // Start at home
@@ -495,6 +543,10 @@
           locationIndicator.innerHTML = `📍 ${location.icon} ${location.name}`;
         }
         
+        // Update environment display
+        challengeUI.updateEnvironmentDisplay(location.id);
+        challengeUI.updateLevelDisplay();
+        
         // Apply location bonuses to game modifiers
         if (location.researchBonus) {
           game.modifiers.researchMultiplier = location.researchBonus;
@@ -506,6 +558,8 @@
         if (location.activities.includes('recruit')) {
           game.transitionTo('town');
         } else if (location.activities.includes('research')) {
+          // Show challenge selection
+          setTimeout(() => challengeUI.showAvailableChallenges(), 300);
           game.transitionTo('research');
         }
       };
@@ -533,6 +587,13 @@
           
           if (game.rollsRemaining > 0) {
             game.rollsRemaining--;
+            game.rollsUsedThisChallenge = (game.rollsUsedThisChallenge || 0) + 1;
+            
+            // Track rolls in challenge UI
+            if (challengeUI) {
+              challengeUI.incrementRollCount();
+            }
+            
             diceUI.rollAll();
             document.getElementById('rolls-remaining').textContent = game.rollsRemaining;
             
@@ -551,6 +612,26 @@
             const rollsCount = document.getElementById('rolls-remaining');
             rollsCount.style.color = '#c94a4a';
             setTimeout(() => rollsCount.style.color = '', 500);
+          }
+        });
+        
+        // New challenge button
+        document.getElementById('new-challenge-btn')?.addEventListener('click', () => {
+          if (challengeUI) {
+            // Reset rolls for new challenge
+            game.rollsRemaining = game.maxRolls;
+            game.rollsUsedThisChallenge = 0;
+            document.getElementById('rolls-remaining').textContent = game.rollsRemaining;
+            
+            // Unlock all dice
+            if (diceUI && diceUI.dice3d) {
+              diceUI.dice3d.dice.forEach(die => {
+                die.locked = false;
+              });
+            }
+            
+            // Show challenge selection
+            challengeUI.showAvailableChallenges();
           }
         });
         
@@ -598,6 +679,30 @@
             }
           });
           
+          // Check challenge conditions
+          if (challengeUI && challengeUI.currentChallenge) {
+            const diceForCheck = diceUI.inventory.equippedDice.map((die, i) => ({
+              value: results[i]?.value || 0,
+              color: die.color || 'white',
+              shape: die.shape || 'd6',
+              sides: parseInt((die.shape || 'd6').replace('d', '')) || 6
+            }));
+            
+            const conditionResult = challengeUI.checkConditions(diceForCheck);
+            
+            // If all conditions met and no rolls left, complete challenge
+            if (game.rollsRemaining <= 0 || conditionResult.success) {
+              setTimeout(() => {
+                const reward = challengeUI.completeChallenge(conditionResult.success);
+                
+                // Update stats display
+                document.getElementById('research-value').textContent = game.research;
+                document.getElementById('sanity-value').textContent = game.sanity;
+                document.getElementById('sanity-fill').style.width = `${(game.sanity / game.maxSanity) * 100}%`;
+              }, 1000);
+            }
+          }
+          
           // Re-enable roll button
           const btn = document.getElementById('roll-all-3d');
           if (btn) {
@@ -625,6 +730,11 @@
           const researchDisplay = document.getElementById('research-display');
           if (researchDisplay) {
             researchDisplay.textContent = game.research;
+          }
+          
+          // Update level display
+          if (challengeUI) {
+            challengeUI.updateLevelDisplay();
           }
           
           ui.render();

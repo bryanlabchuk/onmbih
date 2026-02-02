@@ -36,6 +36,14 @@ export class Game {
     this.run = 1;
     this.currentLocation = null;
     
+    // Player progression
+    this.totalResearchEarned = 0; // Lifetime research for level calculation
+    this.playerLevel = 1;
+    this.rollsUsedThisChallenge = 0;
+    
+    // Active challenge
+    this.currentChallenge = null;
+    
     // Dice system - start with 5 standard dice
     this.dice = Array(5).fill(null).map(() => new Die('standard'));
     this.maxDice = 8;
