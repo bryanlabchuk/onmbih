@@ -122,27 +122,53 @@
         <!-- Card Selection Grid (for town/spirit select) -->
         <div id="card-grid" class="card-grid" style="display: none;"></div>
         
-        <!-- 3D Dice Tray -->
-        <div id="dice-3d-container" class="dice-3d-container" style="display: none;">
-          <div class="dice-3d-hint">Click die to roll • Shift+Click to lock</div>
-          <div class="dice-3d-controls">
-            <button id="roll-all-3d" class="btn btn-primary">🎲 Roll All</button>
+        <!-- Dice Rolling Area -->
+        <div id="dice-area" class="dice-area" style="display: none;">
+          
+          <!-- Dice Values Display -->
+          <div class="dice-values-bar">
+            <div id="dice-values-display" class="dice-values-display">
+              <!-- Individual die values shown here -->
+            </div>
+            <div class="dice-total">
+              Total: <span id="dice-total">0</span>
+            </div>
           </div>
-        </div>
-        
-        <!-- Fallback 2D Dice Tray (for non-WebGL) -->
-        <div id="dice-tray" class="dice-tray" style="display: none;">
-          <!-- 2D Dice will be rendered here as fallback -->
-        </div>
-        
-        <!-- Roll Info -->
-        <div class="roll-info">
-          <div class="rolls-remaining">
-            Rolls Remaining: <span id="rolls-remaining" class="rolls-count">3</span>
+          
+          <!-- 3D Dice Tray -->
+          <div id="dice-3d-container" class="dice-3d-container">
+            <div class="dice-3d-hint">
+              <span>🖱️ Click = Roll</span>
+              <span>⇧ Shift+Click = Lock</span>
+            </div>
           </div>
+          
+          <!-- Fallback 2D Dice Tray (for non-WebGL) -->
+          <div id="dice-tray" class="dice-tray" style="display: none;">
+            <!-- 2D Dice will be rendered here as fallback -->
+          </div>
+          
+          <!-- Dice Controls -->
+          <div class="dice-controls-bar">
+            <div class="rolls-info">
+              <span class="rolls-label">Rolls:</span>
+              <span id="rolls-remaining" class="rolls-count">3</span>
+            </div>
+            
+            <div class="dice-buttons">
+              <button id="roll-all-3d" class="btn btn-primary btn-roll">🎲 Roll All</button>
+              <button id="upgrade-dice-btn" class="btn btn-upgrade">⚙️ Upgrade Dice</button>
+            </div>
+            
+            <div class="research-info">
+              <span class="research-label">Research:</span>
+              <span id="research-display" class="research-count">0</span>
+            </div>
+          </div>
+          
         </div>
         
-        <!-- Score Display -->
+        <!-- Score Display (for challenge results) -->
         <div id="score-display" class="score-display" style="display: none;">
           <div class="score-label">Score</div>
           <div class="score-value">0</div>
@@ -202,6 +228,76 @@
     
     // Dice UI system
     let diceUI = null;
+    let diceInitialized = false;
+    
+    function init3DDice() {
+      if (diceInitialized) return;
+      
+      const container = document.getElementById('dice-3d-container');
+      if (!container) {
+        console.error('Dice container not found');
+        return;
+      }
+      
+      // Make sure container is visible and has dimensions
+      container.style.display = 'block';
+      
+      // Wait a couple frames for layout to calculate
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            diceUI.init3DView(container);
+            diceInitialized = true;
+            console.log('3D Dice initialized successfully');
+            
+            // Do initial roll to set starting positions
+            setTimeout(() => {
+              if (diceUI.dice3d && diceUI.dice3d.dice.length > 0) {
+                // Just drop the dice gently to the tray
+                diceUI.dice3d.dice.forEach(die => {
+                  die.body.position.y = 3;
+                  die.body.velocity.set(0, -5, 0);
+                  die.body.angularVelocity.set(
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 5
+                  );
+                });
+              }
+            }, 100);
+            
+            // Update mini inventory display
+            const miniInv = document.getElementById('dice-inventory-mini');
+            if (miniInv) {
+              diceUI.renderMiniInventory(miniInv);
+            }
+            
+            // Update dice values display
+            setTimeout(() => {
+              diceUI.updateDiceValuesDisplay();
+            }, 500);
+            
+            // Enable the roll button
+            const rollBtn = document.getElementById('roll-all-3d');
+            if (rollBtn) {
+              rollBtn.disabled = false;
+            }
+            
+            // Update research display
+            const researchDisplay = document.getElementById('research-display');
+            if (researchDisplay) {
+              researchDisplay.textContent = game.research;
+            }
+          } catch (err) {
+            console.error('Failed to initialize 3D dice:', err);
+            // Fall back to 2D
+            container.style.display = 'none';
+            const diceTray = document.getElementById('dice-tray');
+            if (diceTray) diceTray.style.display = 'flex';
+          }
+        });
+      });
+    }
     
     // Initialize UI when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
@@ -214,56 +310,117 @@
         
         // Set up 3D dice view when game starts
         const startBtn = document.getElementById('start-btn');
-        const originalClick = startBtn.onclick;
         startBtn.addEventListener('click', () => {
-          setTimeout(() => {
-            const container = document.getElementById('dice-3d-container');
-            if (container && !diceUI.dice3d) {
-              diceUI.init3DView(container);
-            }
-          }, 100);
+          // Small delay to allow game screen to become visible
+          setTimeout(init3DDice, 200);
         });
         
         // Roll all button
         document.getElementById('roll-all-3d')?.addEventListener('click', () => {
-          if (game.rollsRemaining > 0 && diceUI.dice3d) {
+          if (!diceUI || diceUI.isRolling()) return;
+          
+          if (game.rollsRemaining > 0) {
             game.rollsRemaining--;
             diceUI.rollAll();
-            ui.render();
+            document.getElementById('rolls-remaining').textContent = game.rollsRemaining;
+            
+            // Disable button while rolling
+            const btn = document.getElementById('roll-all-3d');
+            btn.disabled = true;
+            btn.textContent = '🎲 Rolling...';
+            
+            // Mark dice as rolling in the display
+            document.querySelectorAll('.die-value-chip').forEach(chip => {
+              chip.classList.add('rolling');
+              chip.textContent = '?';
+            });
+          } else {
+            // Flash the rolls count to indicate no rolls left
+            const rollsCount = document.getElementById('rolls-remaining');
+            rollsCount.style.color = '#c94a4a';
+            setTimeout(() => rollsCount.style.color = '', 500);
           }
         });
         
-        // Dice inventory button
+        // Upgrade dice button (main one in dice area)
+        document.getElementById('upgrade-dice-btn')?.addEventListener('click', () => {
+          openDiceUpgradePanel();
+        });
+        
+        // Dice inventory button (sidebar)
         document.getElementById('open-dice-inventory')?.addEventListener('click', () => {
+          openDiceUpgradePanel();
+        });
+        
+        function openDiceUpgradePanel() {
           const modal = document.getElementById('modal-overlay');
           modal.style.display = 'flex';
           modal.innerHTML = `
-            <div class="modal" style="max-width: 600px;">
+            <div class="modal" style="max-width: 750px; max-height: 85vh; overflow-y: auto;">
               <div class="modal-header">
-                <h3>🎲 Dice Collection</h3>
+                <h3>🎲 Dice Workshop</h3>
                 <button class="modal-close" onclick="document.getElementById('modal-overlay').style.display='none'">&times;</button>
               </div>
-              <div id="dice-inventory-content"></div>
+              <div class="workshop-intro">
+                <p>📚 <strong>Research Points:</strong> <span style="color: var(--ghost-glow); font-size: 1.2em;">${game.research}</span></p>
+                <p style="font-size: 0.85em; color: var(--text-secondary);">
+                  Upgrade your dice to increase their face values. Higher values help you meet spirit challenge requirements!
+                </p>
+              </div>
+              <div id="dice-inventory-content" style="padding: 0 20px 20px;"></div>
             </div>
           `;
           diceUI.renderInventoryPanel(document.getElementById('dice-inventory-content'));
-        });
+        }
         
         // Listen for roll complete events
         window.addEventListener('diceRollComplete', (e) => {
           const results = e.detail;
+          console.log('Dice roll complete:', results);
+          
           // Update game dice values
           results.forEach((result, index) => {
             if (game.dice[index]) {
               game.dice[index].currentValue = result.value;
+              game.dice[index].locked = result.locked;
             }
           });
+          
+          // Re-enable roll button
+          const btn = document.getElementById('roll-all-3d');
+          if (btn) {
+            btn.disabled = game.rollsRemaining <= 0;
+            btn.textContent = game.rollsRemaining > 0 ? '🎲 Roll All' : 'No Rolls Left';
+          }
+          
+          // Update dice values display
+          if (diceUI) {
+            diceUI.updateDiceValuesDisplay();
+          }
+          
+          // Remove rolling animation
+          document.querySelectorAll('.die-value-chip').forEach(chip => {
+            chip.classList.remove('rolling');
+          });
+          
+          // Update mini inventory
+          const miniInv = document.getElementById('dice-inventory-mini');
+          if (miniInv && diceUI) {
+            diceUI.renderMiniInventory(miniInv);
+          }
+          
+          // Update research display
+          const researchDisplay = document.getElementById('research-display');
+          if (researchDisplay) {
+            researchDisplay.textContent = game.research;
+          }
+          
           ui.render();
         });
         
-        console.log('3D Dice system initialized');
+        console.log('Dice UI system ready');
       } catch (err) {
-        console.warn('3D Dice system failed to initialize, using 2D fallback:', err);
+        console.error('3D Dice system failed to initialize:', err);
       }
     });
   </script>

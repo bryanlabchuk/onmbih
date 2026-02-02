@@ -184,13 +184,10 @@ class UIRenderer {
     btnContainer.appendChild(skipBtn);
     cardGrid.parentElement.appendChild(btnContainer);
     
-    // Hide dice trays
-    if (this.elements.diceTray) {
-      this.elements.diceTray.style.display = 'none';
-    }
-    const dice3dContainer = document.getElementById('dice-3d-container');
-    if (dice3dContainer) {
-      dice3dContainer.style.display = 'none';
+    // Hide dice area
+    const diceArea = document.getElementById('dice-area');
+    if (diceArea) {
+      diceArea.style.display = 'none';
     }
   }
 
@@ -225,39 +222,54 @@ class UIRenderer {
 
   showResearchPhase() {
     this.hideTitle();
-    this.updatePhaseIndicator('Research', 'Roll dice to gather research on the spirits');
+    this.updatePhaseIndicator('Research Phase', 'Roll dice to gather research on the spirits haunting Derek');
     
     // Hide card grid
     if (this.elements.cardGrid) {
       this.elements.cardGrid.style.display = 'none';
     }
     
-    // Show 3D dice tray if available, otherwise fallback to 2D
-    const dice3dContainer = document.getElementById('dice-3d-container');
-    if (dice3dContainer && window.diceUI?.dice3d) {
-      dice3dContainer.style.display = 'block';
-      if (this.elements.diceTray) {
-        this.elements.diceTray.style.display = 'none';
-      }
-    } else if (this.elements.diceTray) {
-      this.elements.diceTray.style.display = 'flex';
-      this.renderDice();
+    // Show dice area
+    const diceArea = document.getElementById('dice-area');
+    if (diceArea) {
+      diceArea.style.display = 'flex';
     }
     
+    // Update dice values display
+    if (window.diceUI) {
+      window.diceUI.updateDiceValuesDisplay();
+    }
+    
+    // Update rolls display
     this.updateRollsDisplay();
+    
+    // Update research display in dice area
+    const researchDisplay = document.getElementById('research-display');
+    if (researchDisplay) {
+      researchDisplay.textContent = game.research;
+    }
+    
+    // Update roll button state
+    const rollBtn = document.getElementById('roll-all-3d');
+    if (rollBtn) {
+      rollBtn.disabled = game.rollsRemaining <= 0;
+      rollBtn.textContent = game.rollsRemaining > 0 ? '🎲 Roll All' : 'No Rolls Left';
+    }
     
     // Update buttons
     if (this.elements.rollBtn) {
-      this.elements.rollBtn.style.display = window.diceUI?.dice3d ? 'none' : 'inline-block';
-      this.elements.rollBtn.disabled = game.rollsRemaining <= 0;
+      this.elements.rollBtn.style.display = 'none';
     }
     if (this.elements.confirmBtn) {
       this.elements.confirmBtn.style.display = 'inline-block';
       this.elements.confirmBtn.textContent = 'Finish Research';
     }
     
-    // Show score display
-    this.updateScoreDisplay('research');
+    // Hide score display in research (we show total in dice area)
+    const scoreDisplay = document.getElementById('score-display');
+    if (scoreDisplay) {
+      scoreDisplay.style.display = 'none';
+    }
   }
 
   // ===== SPIRIT SELECT PHASE =====
@@ -293,13 +305,10 @@ class UIRenderer {
       cardGrid.appendChild(card);
     });
     
-    // Hide dice trays
-    if (this.elements.diceTray) {
-      this.elements.diceTray.style.display = 'none';
-    }
-    const dice3dContainer = document.getElementById('dice-3d-container');
-    if (dice3dContainer) {
-      dice3dContainer.style.display = 'none';
+    // Hide dice area
+    const diceArea = document.getElementById('dice-area');
+    if (diceArea) {
+      diceArea.style.display = 'none';
     }
     
     // Back button
@@ -348,20 +357,19 @@ class UIRenderer {
     }
     
     this.updatePhaseIndicator(
-      `Challenging: ${game.currentSpirit.name}`,
+      `⚔️ Challenging: ${game.currentSpirit.name}`,
       game.currentSpirit.challengeRequirement.description
     );
     
-    // Show 3D dice tray if available, otherwise fallback to 2D
-    const dice3dContainer = document.getElementById('dice-3d-container');
-    if (dice3dContainer && window.diceUI?.dice3d) {
-      dice3dContainer.style.display = 'block';
-      if (this.elements.diceTray) {
-        this.elements.diceTray.style.display = 'none';
-      }
-    } else if (this.elements.diceTray) {
-      this.elements.diceTray.style.display = 'flex';
-      this.renderDice();
+    // Show dice area
+    const diceArea = document.getElementById('dice-area');
+    if (diceArea) {
+      diceArea.style.display = 'flex';
+    }
+    
+    // Update dice values display
+    if (window.diceUI) {
+      window.diceUI.updateDiceValuesDisplay();
     }
     
     // Hide card grid
@@ -372,10 +380,22 @@ class UIRenderer {
     this.updateRollsDisplay();
     this.updateSpiritDisplay();
     
-    // Update buttons - hide roll button if using 3D dice
+    // Update research display
+    const researchDisplay = document.getElementById('research-display');
+    if (researchDisplay) {
+      researchDisplay.textContent = game.research;
+    }
+    
+    // Update roll button state
+    const rollBtn = document.getElementById('roll-all-3d');
+    if (rollBtn) {
+      rollBtn.disabled = game.rollsRemaining <= 0;
+      rollBtn.textContent = game.rollsRemaining > 0 ? '🎲 Roll All' : 'No Rolls Left';
+    }
+    
+    // Update buttons
     if (this.elements.rollBtn) {
-      this.elements.rollBtn.style.display = window.diceUI?.dice3d ? 'none' : 'inline-block';
-      this.elements.rollBtn.disabled = game.rollsRemaining <= 0;
+      this.elements.rollBtn.style.display = 'none';
     }
     if (this.elements.confirmBtn) {
       this.elements.confirmBtn.style.display = 'inline-block';
