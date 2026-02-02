@@ -501,7 +501,7 @@
           
           <!-- ACTION BUTTONS (Far Right) -->
           <div class="ui-actions">
-            <button id="roll-all-3d" class="ui-action-btn btn-primary" disabled>
+            <button id="roll-all-3d" class="ui-action-btn btn-primary">
               <span class="btn-icon">🎲</span>
               <span>Roll</span>
               <span class="rolls-badge" id="rolls-badge">3</span>
@@ -922,7 +922,10 @@
         
         // Helper to show/hide dice action buttons
         const showDiceButtons = (show) => {
-          if (rollBtn) rollBtn.style.display = show ? '' : 'none';
+          if (rollBtn) {
+            rollBtn.style.display = show ? '' : 'none';
+            if (show) rollBtn.disabled = false; // Enable when showing
+          }
           if (skipBtn) skipBtn.style.display = show ? '' : 'none';
         };
         
@@ -1183,8 +1186,11 @@
           switch (randomEvent) {
             case 'research':
               window.uiBar?.logEvent('You found old research notes!', 'success');
-              // Show dice buttons for challenge
-              if (rollBtn) rollBtn.style.display = '';
+              // Show and enable dice buttons for challenge
+              if (rollBtn) {
+                rollBtn.style.display = '';
+                rollBtn.disabled = false;
+              }
               if (skipBtn) skipBtn.style.display = '';
               challengeUI.showAvailableChallenges('easy');
               break;
@@ -1193,8 +1199,11 @@
               break;
             case 'elite':
               window.uiBar?.logEvent('A powerful presence awakens!', 'danger');
-              // Show dice buttons for challenge
-              if (rollBtn) rollBtn.style.display = '';
+              // Show and enable dice buttons for challenge
+              if (rollBtn) {
+                rollBtn.style.display = '';
+                rollBtn.disabled = false;
+              }
               if (skipBtn) skipBtn.style.display = '';
               challengeUI.showAvailableChallenges('hard');
               break;
@@ -1371,12 +1380,18 @@
           uiBar.logEvent(`Started: ${e.detail.challenge.name}`, 'info');
           uiBar.updateDicePreview();
           
-          // Show dice buttons and hide continue button when challenge starts
+          // Show and ENABLE dice buttons when challenge starts
           uiBar.hideContinueButton();
           const rollBtn = document.getElementById('roll-all-3d');
           const skipBtn = document.getElementById('skip-challenge-btn');
-          if (rollBtn) rollBtn.style.display = '';
+          if (rollBtn) {
+            rollBtn.style.display = '';
+            rollBtn.disabled = false; // Enable the button!
+          }
           if (skipBtn) skipBtn.style.display = '';
+          
+          // Update roll button state
+          uiBar.updateRollButton(false, game.rollsRemaining);
         });
         
         // Upgrade dice button (main one in dice area)
