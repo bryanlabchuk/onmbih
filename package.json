@@ -28,5 +28,9 @@
   "bugs": {
     "url": "https://github.com/bryanlabchuk/onmbih/issues"
   },
-  "homepage": "https://github.com/bryanlabchuk/onmbih#readme"
+  "homepage": "https://github.com/bryanlabchuk/onmbih#readme",
+  "dependencies": {
+    "cannon-es": "^0.20.0",
+    "three": "^0.182.0"
+  }
 }
