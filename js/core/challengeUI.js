@@ -169,9 +169,9 @@ export class ChallengeUI {
   }
 
   // Generate and display available challenges
-  showAvailableChallenges() {
+  showAvailableChallenges(forceTier = null) {
     const level = this.game.playerLevel || 1;
-    this.availableChallenges = generateChallenges(level, 3);
+    this.availableChallenges = generateChallenges(level, 3, forceTier);
     
     // Create challenge selection modal
     const modal = document.getElementById('modal-overlay');
@@ -236,6 +236,7 @@ export class ChallengeUI {
     this.game.currentChallenge = challenge;
     this.rollsUsed = 0;
     this.game.rollsUsedThisChallenge = 0;
+    this.lastConditionResults = [];
     
     this.updateChallengeDisplay();
     
@@ -243,6 +244,11 @@ export class ChallengeUI {
     if (this.game.logEvent) {
       this.game.logEvent('challenge_start', `Started challenge: ${challenge.name}`);
     }
+    
+    // Dispatch event for UI bar to update
+    window.dispatchEvent(new CustomEvent('challengeSelected', { 
+      detail: { challenge } 
+    }));
   }
 
   // Update the active challenge display

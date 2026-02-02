@@ -707,7 +707,7 @@ function longestStraight(dice) {
 }
 
 // ===== CHALLENGE GENERATOR =====
-export function generateChallenges(playerLevel, count = 3) {
+export function generateChallenges(playerLevel, count = 3, forceTier = null) {
   const availableTiers = Object.entries(CHALLENGE_TIERS)
     .filter(([_, tier]) => playerLevel >= tier.requiredLevel)
     .map(([id, _]) => id);
@@ -715,15 +715,23 @@ export function generateChallenges(playerLevel, count = 3) {
   const challenges = [];
   
   for (let i = 0; i < count; i++) {
-    // Weight towards appropriate difficulty
-    const tierWeights = {
-      easy: playerLevel <= 2 ? 3 : 1,
-      medium: playerLevel >= 2 && playerLevel <= 4 ? 3 : 1,
-      hard: playerLevel >= 4 ? 2 : 0,
-      expert: playerLevel >= 6 ? 2 : 0
-    };
+    let tier;
     
-    const tier = weightedRandomTier(availableTiers, tierWeights);
+    // Use forced tier if specified and available
+    if (forceTier && RESEARCH_CHALLENGES[forceTier]) {
+      tier = forceTier;
+    } else {
+      // Weight towards appropriate difficulty
+      const tierWeights = {
+        easy: playerLevel <= 2 ? 3 : 1,
+        medium: playerLevel >= 2 && playerLevel <= 4 ? 3 : 1,
+        hard: playerLevel >= 4 ? 2 : 0,
+        expert: playerLevel >= 6 ? 2 : 0
+      };
+      
+      tier = weightedRandomTier(availableTiers, tierWeights);
+    }
+    
     const tierChallenges = RESEARCH_CHALLENGES[tier];
     
     if (tierChallenges && tierChallenges.length > 0) {

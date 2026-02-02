@@ -12,6 +12,8 @@
   
   <!-- Styles -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ui-bar.css">
+  <link rel="stylesheet" href="css/progression-map.css">
   
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
@@ -230,183 +232,254 @@
     <!-- GAME SCREEN -->
     <div id="game-screen" class="game-main" style="display: none;">
       
-      <!-- HEADER -->
-      <header class="game-header" style="grid-column: 1 / -1;">
-        <div class="game-title">
-          <h1 style="font-size: 1.2rem;">Oh No My Boyfriend Is Haunted</h1>
-          <div id="current-location" class="current-location">📍 🏠 Your House</div>
-        </div>
+      <!-- ===== MAIN CONTENT AREA ===== -->
+      <div class="game-main-content">
         
-        <div class="stats-bar">
-          <div class="stat">
-            <span class="stat-label">Sanity</span>
-            <div class="sanity-bar">
-              <div id="sanity-fill" class="sanity-fill" style="width: 100%"></div>
+        <!-- COMPACT HEADER -->
+        <header class="game-header-compact">
+          <div class="header-title">
+            <h1>Oh No My Boyfriend Is Haunted</h1>
+          </div>
+          <button id="audio-toggle" class="btn btn-icon-only" title="Toggle Audio">🔊</button>
+        </header>
+        
+        <!-- MAIN PLAY AREA -->
+        <main class="play-area-full">
+          
+          <!-- Phase Indicator -->
+          <div id="phase-indicator" class="phase-indicator">
+            <div id="phase-name" class="phase-name">Loading...</div>
+            <div id="phase-description" class="phase-description">Please wait...</div>
+          </div>
+          
+          <!-- Card Selection Grid (for town/spirit select) -->
+          <div id="card-grid" class="card-grid" style="display: none;"></div>
+          
+          <!-- Dice Rolling Area -->
+          <div id="dice-area" class="dice-area" style="display: none;">
+            
+            <!-- Location Environment Banner -->
+            <div id="location-environment" class="location-environment">
+              <div class="env-header">
+                <span id="env-icon" class="env-icon">🏠</span>
+                <span id="env-name" class="env-name">Your House</span>
+                <span id="env-type" class="env-type">Comfortable</span>
+              </div>
+              <div id="env-effects" class="env-effects">
+                <!-- Environment effects listed here -->
+              </div>
             </div>
-            <span id="sanity-value" class="stat-value sanity">100</span>
+            
+            <!-- Dice Values Display -->
+            <div class="dice-values-bar">
+              <div id="dice-values-display" class="dice-values-display">
+                <!-- Individual die values shown here -->
+              </div>
+              <div class="dice-score-section">
+                <div class="dice-total" id="dice-total">0</div>
+                <div id="score-bonuses" class="score-bonuses">
+                  <!-- Bonus tags appear here -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- 3D Dice Tray -->
+            <div id="dice-3d-container" class="dice-3d-container">
+              <div class="dice-3d-hint">
+                <span>🖱️ Click = Roll</span>
+                <span>⇧ Shift+Click = Lock</span>
+              </div>
+            </div>
+            
+            <!-- Fallback 2D Dice Tray (for non-WebGL) -->
+            <div id="dice-tray" class="dice-tray" style="display: none;">
+              <!-- 2D Dice will be rendered here as fallback -->
+            </div>
+            
           </div>
           
-          <div class="stat">
-            <span class="stat-label">Research</span>
-            <span id="research-value" class="stat-value research">0</span>
+          <!-- Score Display (for challenge results) -->
+          <div id="score-display" class="score-display" style="display: none;">
+            <div class="score-label">Score</div>
+            <div class="score-value">0</div>
           </div>
           
-          <div class="stat">
-            <span class="stat-label">Spirits</span>
-            <span id="spirits-value" class="stat-value spirits">0/7</span>
+          <!-- Hidden legacy elements for compatibility -->
+          <div style="display: none;">
+            <div id="allies-list"></div>
+            <div id="dice-inventory-mini"></div>
+            <span id="rolls-remaining">3</span>
+            <span id="research-display">0</span>
+            <button id="roll-btn"></button>
+            <button id="confirm-btn"></button>
           </div>
           
-          <button id="map-btn" class="btn btn-map" style="padding: 8px 15px; font-size: 1rem;">🗺️ Map</button>
-          <button id="audio-toggle" class="btn" style="padding: 8px 15px; font-size: 1.2rem;">🔊</button>
-        </div>
-      </header>
+        </main>
+        
+      </div>
       
-      <!-- LEFT SIDEBAR - ALLIES & DICE -->
-      <aside class="allies-panel">
-        <h3 class="panel-title">👥 Your Allies</h3>
-        <div id="allies-list" class="allies-list">
-          <div class="flavor-text">No allies recruited yet</div>
-        </div>
-        
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-          <h3 class="panel-title">🎲 Dice Inventory</h3>
-          <div id="dice-inventory-mini" class="dice-inventory-mini">
-            <!-- Mini dice inventory will be rendered here -->
-          </div>
-          <button id="open-dice-inventory" class="btn" style="width: 100%; margin-top: 10px; font-size: 0.85rem;">
-            Manage Dice
-          </button>
-        </div>
-      </aside>
-      
-      <!-- CENTER - MAIN PLAY AREA -->
-      <main class="play-area">
-        <!-- Phase Indicator -->
-        <div id="phase-indicator" class="phase-indicator">
-          <div id="phase-name" class="phase-name">Loading...</div>
-          <div id="phase-description" class="phase-description">Please wait...</div>
-        </div>
-        
-        <!-- Card Selection Grid (for town/spirit select) -->
-        <div id="card-grid" class="card-grid" style="display: none;"></div>
-        
-        <!-- Dice Rolling Area -->
-        <div id="dice-area" class="dice-area" style="display: none;">
+      <!-- ===== CRPG-STYLE BOTTOM UI BAR ===== -->
+      <div class="ui-bar">
+        <div class="ui-bar-main">
           
-          <!-- Location Environment Banner -->
-          <div id="location-environment" class="location-environment">
-            <div class="env-header">
-              <span id="env-icon" class="env-icon">🏠</span>
-              <span id="env-name" class="env-name">Your House</span>
-              <span id="env-type" class="env-type">Comfortable</span>
+          <!-- DICE PANEL (Left) -->
+          <div class="ui-panel ui-panel-dice" id="dice-panel">
+            <div class="ui-panel-header" data-panel="dice">
+              <div class="ui-panel-title">
+                <span class="panel-icon">🎲</span>
+                <span>Dice</span>
+              </div>
+              <span class="ui-panel-expand">▲</span>
             </div>
-            <div id="env-effects" class="env-effects">
-              <!-- Environment effects listed here -->
+            <div class="ui-panel-preview">
+              <div class="dice-mini-grid" id="dice-mini-preview">
+                <!-- Mini dice preview -->
+              </div>
             </div>
-          </div>
-          
-          <!-- Active Challenge Display -->
-          <div id="challenge-display" class="challenge-display" style="display: none;">
-            <div class="challenge-header">
-              <span id="challenge-tier" class="challenge-tier">⭐</span>
-              <h4 id="challenge-name">Challenge Name</h4>
-            </div>
-            <p id="challenge-description" class="challenge-desc">Description</p>
-            <div id="challenge-conditions" class="challenge-conditions">
-              <!-- Conditions listed here -->
-            </div>
-            <div class="challenge-reward">
-              <span>Reward:</span>
-              <span id="challenge-reward" class="reward-value">+10 Research</span>
-            </div>
-          </div>
-          
-          <!-- Player Level Display -->
-          <div id="player-level-display" class="player-level-display">
-            <span class="level-label">Level</span>
-            <span id="player-level" class="level-value">1</span>
-            <span id="player-title" class="level-title">Novice Investigator</span>
-            <div class="party-info">
-              <span>👥 Party:</span>
-              <span id="party-count">0</span>/<span id="party-max">3</span>
-            </div>
-          </div>
-          
-          <!-- Dice Values Display -->
-          <div class="dice-values-bar">
-            <div id="dice-values-display" class="dice-values-display">
-              <!-- Individual die values shown here -->
-            </div>
-            <div class="dice-score-section">
-              <div class="dice-total" id="dice-total">0</div>
-              <div id="score-bonuses" class="score-bonuses">
-                <!-- Bonus tags appear here -->
+            <div class="ui-panel-content">
+              <div class="dice-panel-expanded">
+                <div class="dice-panel-section">
+                  <h4>Equipped Dice</h4>
+                  <div class="dice-equipped-list" id="dice-equipped-list">
+                    <!-- Equipped dice items -->
+                  </div>
+                </div>
+                <div class="dice-panel-buttons">
+                  <button id="open-dice-inventory" class="btn">Manage</button>
+                  <button id="upgrade-dice-btn" class="btn">Upgrade</button>
+                </div>
               </div>
             </div>
           </div>
           
-          <!-- 3D Dice Tray -->
-          <div id="dice-3d-container" class="dice-3d-container">
-            <div class="dice-3d-hint">
-              <span>🖱️ Click = Roll</span>
-              <span>⇧ Shift+Click = Lock</span>
+          <!-- EVENT LOG (Center) -->
+          <div class="ui-log">
+            <div class="ui-log-header">
+              <span>📜 Event Log</span>
+            </div>
+            <div class="ui-log-content" id="ui-event-log">
+              <div class="ui-log-entry info">Welcome to the investigation...</div>
             </div>
           </div>
           
-          <!-- Fallback 2D Dice Tray (for non-WebGL) -->
-          <div id="dice-tray" class="dice-tray" style="display: none;">
-            <!-- 2D Dice will be rendered here as fallback -->
+          <!-- QUEST/CHALLENGE PANEL (Right) -->
+          <div class="ui-panel ui-panel-quest" id="quest-panel">
+            <div class="ui-panel-header" data-panel="quest">
+              <div class="ui-panel-title">
+                <span class="panel-icon">📖</span>
+                <span>Quest</span>
+              </div>
+              <span class="ui-panel-expand">▲</span>
+            </div>
+            <div class="ui-panel-preview">
+              <div class="quest-preview" id="quest-preview">
+                <span class="quest-preview-name">No active challenge</span>
+                <div class="quest-preview-progress" id="quest-pips">
+                  <!-- Condition pips -->
+                </div>
+              </div>
+            </div>
+            <div class="ui-panel-content">
+              <div class="quest-panel-expanded" id="quest-expanded">
+                <!-- Full quest details -->
+                <div class="quest-detail-header">
+                  <span class="quest-tier-badge" id="quest-tier-badge">⭐</span>
+                  <div class="quest-detail-title">
+                    <h3 id="quest-detail-name">Select a Challenge</h3>
+                    <span class="quest-type" id="quest-detail-type">Research</span>
+                  </div>
+                </div>
+                <div class="quest-conditions-list" id="quest-conditions-list">
+                  <!-- Conditions -->
+                </div>
+                <div class="quest-reward-section" id="quest-reward-section" style="display: none;">
+                  <span class="quest-reward-label">Reward</span>
+                  <span class="quest-reward-value" id="quest-reward-value">+0 Research</span>
+                </div>
+              </div>
+            </div>
           </div>
           
-          <!-- Dice Controls -->
-          <div class="dice-controls-bar">
-            <div class="rolls-info">
-              <span class="rolls-label">Rolls:</span>
-              <span id="rolls-remaining" class="rolls-count">3</span>
-            </div>
-            
-            <div class="dice-buttons">
-              <button id="roll-all-3d" class="btn btn-primary btn-roll">🎲 Roll All</button>
-              <button id="new-challenge-btn" class="btn btn-challenge">📖 New Challenge</button>
-              <button id="upgrade-dice-btn" class="btn btn-upgrade">⚙️ Upgrade Dice</button>
-            </div>
-            
-            <div class="research-info">
-              <span class="research-label">Research:</span>
-              <span id="research-display" class="research-count">0</span>
-            </div>
+          <!-- ACTION BUTTONS (Far Right) -->
+          <div class="ui-actions">
+            <button id="roll-all-3d" class="ui-action-btn btn-primary" disabled>
+              <span class="btn-icon">🎲</span>
+              <span>Roll</span>
+              <span class="rolls-badge" id="rolls-badge">3</span>
+            </button>
+            <button id="skip-challenge-btn" class="ui-action-btn btn-warning">
+              <span class="btn-icon">⏭️</span>
+              <span>Skip</span>
+            </button>
+            <button id="map-btn" class="ui-action-btn btn-secondary">
+              <span class="btn-icon">🗺️</span>
+              <span>Map</span>
+            </button>
+            <button id="new-challenge-btn" class="ui-action-btn btn-secondary">
+              <span class="btn-icon">📖</span>
+              <span>New</span>
+            </button>
           </div>
           
         </div>
         
-        <!-- Score Display (for challenge results) -->
-        <div id="score-display" class="score-display" style="display: none;">
-          <div class="score-label">Score</div>
-          <div class="score-value">0</div>
+        <!-- STATUS BAR -->
+        <div class="ui-bar-status">
+          <div class="status-stats">
+            <div class="status-stat sanity">
+              <span class="stat-icon">🩸</span>
+              <span>Sanity:</span>
+              <div class="sanity-mini-bar">
+                <div id="sanity-fill" class="sanity-mini-fill" style="width: 100%"></div>
+              </div>
+              <span id="sanity-value" class="stat-value">100</span>
+            </div>
+            <div class="status-stat research">
+              <span class="stat-icon">📚</span>
+              <span>Research:</span>
+              <span id="research-value" class="stat-value">0</span>
+            </div>
+            <div class="status-stat spirits">
+              <span class="stat-icon">👻</span>
+              <span>Spirits:</span>
+              <span id="spirits-value" class="stat-value">0/7</span>
+            </div>
+            <div class="status-stat level">
+              <span class="stat-icon">⬆️</span>
+              <span>Level:</span>
+              <span id="player-level" class="stat-value">1</span>
+              <span id="player-title" class="level-title-mini">Novice</span>
+            </div>
+          </div>
+          <div class="status-location" id="status-location">
+            <span class="location-icon">📍</span>
+            <span class="location-name" id="current-location-name">Your House</span>
+          </div>
         </div>
-        
-        <!-- Action Buttons -->
-        <div class="btn-group">
-          <button id="roll-btn" class="btn btn-primary" style="display: none;">Roll Dice</button>
-          <button id="confirm-btn" class="btn btn-success" style="display: none;">Confirm</button>
-        </div>
-        
-        <!-- Event Log -->
-        <div id="event-log" class="event-log">
-          <div class="log-entry info">Welcome to the investigation...</div>
-        </div>
-      </main>
+      </div>
       
-      <!-- RIGHT SIDEBAR - SPIRIT/INFO -->
-      <aside class="info-panel">
-        <h3 class="panel-title">👻 Current Spirit</h3>
-        <div id="spirit-display" class="spirit-display" style="display: none;">
-          <!-- Spirit info will be rendered here -->
+      <!-- Hidden elements for challenge system compatibility -->
+      <div id="challenge-display" class="challenge-display" style="display: none;">
+        <div class="challenge-header">
+          <span id="challenge-tier" class="challenge-tier">⭐</span>
+          <h4 id="challenge-name">Challenge Name</h4>
         </div>
-        <div id="no-spirit" class="flavor-text" style="padding: 20px; text-align: center;">
-          No spirit selected. Gather research to discover which ancestor haunts Derek...
+        <p id="challenge-description" class="challenge-desc">Description</p>
+        <div id="challenge-conditions" class="challenge-conditions"></div>
+        <div class="challenge-reward">
+          <span>Reward:</span>
+          <span id="challenge-reward" class="reward-value">+10 Research</span>
         </div>
-      </aside>
+      </div>
+      
+      <div id="player-level-display" class="player-level-display" style="display: none;">
+        <div class="party-info">
+          <span id="party-count">0</span>/<span id="party-max">3</span>
+        </div>
+      </div>
+      
+      <!-- Hidden legacy event log for compatibility -->
+      <div id="event-log" class="event-log" style="display: none;"></div>
       
     </div>
     
@@ -434,6 +507,9 @@
     import { MapUI } from './js/core/mapUI.js';
     import { ChallengeUI } from './js/core/challengeUI.js';
     import { visualEffects } from './js/core/visualEffects.js';
+    import { UIBar } from './js/core/uiBar.js';
+    import { ProgressionMap } from './js/core/progressionMap.js';
+    import { getDifficultySettings, NODE_TYPES } from './js/data/townMap.js';
     
     // Make game globally accessible for debugging
     window.game = game;
@@ -528,28 +604,47 @@
       challengeUI = new ChallengeUI(game);
       window.challengeUI = challengeUI;
       
-      // Initialize Map UI
+      // Initialize Progression Map (Slay the Spire style)
+      const progressionMap = new ProgressionMap(game);
+      progressionMap.init(); // Generate the map
+      window.progressionMap = progressionMap;
+      
+      // Keep legacy mapUI for compatibility but use progression map for navigation
       mapUI = new MapUI(game);
-      mapUI.setCurrentLocation('home'); // Start at home
+      mapUI.setCurrentLocation('home');
       window.mapUI = mapUI;
       
-      // Set up map location callback
-      mapUI.onLocationSelect = (location) => {
-        console.log('Traveling to:', location.name);
-        game.currentLocation = location;
-        game.logEvent('travel', `Traveled to ${location.name}`);
+      // Set up progression map node callback
+      progressionMap.onNodeSelect = (node) => {
+        console.log('Entering node:', node.locationName, node.type);
         
-        // Update UI to show we're at a new location
-        const locationIndicator = document.getElementById('current-location');
-        if (locationIndicator) {
-          locationIndicator.innerHTML = `📍 ${location.icon} ${location.name}`;
+        // Store current node in game state
+        game.currentNode = node;
+        game.currentLocation = {
+          id: node.id,
+          name: node.locationName,
+          icon: node.locationIcon,
+          activities: node.activities,
+          atmosphere: node.atmosphere
+        };
+        game.logEvent('travel', `Entered ${node.locationName}`);
+        
+        // Update location name in status bar
+        const locationName = document.getElementById('current-location-name');
+        if (locationName) {
+          locationName.textContent = node.locationName;
         }
+        
+        // Update phase indicator
+        const phaseName = document.getElementById('phase-name');
+        const phaseDesc = document.getElementById('phase-description');
+        if (phaseName) phaseName.textContent = node.locationName;
+        if (phaseDesc) phaseDesc.textContent = NODE_TYPES[node.type]?.description || '';
         
         // Dock all dice when changing locations
         if (diceUI && diceUI.dice3d) {
           diceUI.dice3d.dockAllDice();
           
-          // Add docked class to container
           const diceContainer = document.getElementById('dice-3d-container');
           if (diceContainer) {
             diceContainer.classList.add('dice-docked');
@@ -557,39 +652,201 @@
           }
         }
         
-        // Reset rolls for new location
-        game.rollsRemaining = game.maxRolls;
-        game.rollsUsedThisChallenge = 0;
-        const rollsEl = document.getElementById('rolls-remaining');
-        if (rollsEl) rollsEl.textContent = game.rollsRemaining;
+        // Get difficulty settings for this node
+        const difficulty = getDifficultySettings(node.difficulty);
         
-        // Update environment display
-        challengeUI.updateEnvironmentDisplay(location.id);
-        challengeUI.updateLevelDisplay();
+        // Reset rolls based on difficulty
+        game.maxRolls = difficulty.rollCount;
+        game.rollsRemaining = difficulty.rollCount;
+        game.rollsUsedThisChallenge = 0;
+        
+        // Update UI bar
+        if (window.uiBar) {
+          window.uiBar.updateRollButton(false, game.rollsRemaining);
+          window.uiBar.logEvent(`Entered ${node.locationName}`, 'info');
+        }
         
         // Animate dice tray entrance
         visualEffects.animateDiceEntrance();
         
-        // Apply location bonuses to game modifiers
-        if (location.researchBonus) {
-          game.modifiers.researchMultiplier = location.researchBonus;
-        } else {
-          game.modifiers.researchMultiplier = 1;
-        }
-        
-        // Transition to appropriate phase based on activities
-        if (location.activities.includes('recruit')) {
-          game.transitionTo('town');
-        } else if (location.activities.includes('research')) {
-          // Show challenge selection
-          setTimeout(() => challengeUI.showAvailableChallenges(), 300);
-          game.transitionTo('research');
-        }
+        // Handle different node types
+        handleNodeType(node, difficulty);
       };
       
-      // Map button
+      // Handle different node types
+      function handleNodeType(node, difficulty) {
+        const diceArea = document.getElementById('dice-area');
+        const cardGrid = document.getElementById('card-grid');
+        
+        switch (node.type) {
+          case 'start':
+            // Tutorial / safe zone
+            diceArea.style.display = 'block';
+            cardGrid.style.display = 'none';
+            game.transitionTo('town');
+            // Auto-complete start node
+            setTimeout(() => {
+              progressionMap.completeNode(node.id);
+              window.uiBar?.logEvent('Ready to begin your investigation!', 'success');
+            }, 500);
+            break;
+            
+          case 'research':
+          case 'elite':
+            // Research challenge
+            diceArea.style.display = 'block';
+            cardGrid.style.display = 'none';
+            game.transitionTo('research');
+            // Show challenge selection with appropriate tier
+            setTimeout(() => {
+              challengeUI.showAvailableChallenges(difficulty.challengeTier);
+            }, 300);
+            break;
+            
+          case 'recruit':
+            // Recruitment event
+            diceArea.style.display = 'none';
+            cardGrid.style.display = 'grid';
+            game.transitionTo('town');
+            ui.renderRecruitmentOptions(cardGrid, () => {
+              progressionMap.completeNode(node.id);
+              progressionMap.show();
+            });
+            break;
+            
+          case 'rest':
+            // Rest and heal
+            diceArea.style.display = 'none';
+            cardGrid.style.display = 'none';
+            handleRestNode(node);
+            break;
+            
+          case 'store':
+            // Shopping
+            diceArea.style.display = 'none';
+            cardGrid.style.display = 'none';
+            handleStoreNode(node);
+            break;
+            
+          case 'mystery':
+            // Random event
+            diceArea.style.display = 'block';
+            cardGrid.style.display = 'none';
+            handleMysteryNode(node, difficulty);
+            break;
+            
+          case 'spirit':
+          case 'boss':
+            // Spirit challenge
+            diceArea.style.display = 'block';
+            cardGrid.style.display = 'none';
+            game.transitionTo('spirit');
+            setTimeout(() => {
+              challengeUI.showAvailableChallenges(difficulty.challengeTier);
+            }, 300);
+            break;
+        }
+      }
+      
+      // Handle rest node
+      function handleRestNode(node) {
+        const sanityGain = node.rewards.sanity || 25;
+        game.sanity = Math.min(game.maxSanity, game.sanity + sanityGain);
+        
+        // Update UI
+        document.getElementById('sanity-value').textContent = game.sanity;
+        document.getElementById('sanity-fill').style.width = `${(game.sanity / game.maxSanity) * 100}%`;
+        
+        // Show rest notification
+        visualEffects.showComboText(`+${sanityGain} Sanity!`, '#6a8fc7');
+        window.uiBar?.logEvent(`Rested and restored ${sanityGain} sanity`, 'success');
+        
+        // Complete node after short delay
+        setTimeout(() => {
+          progressionMap.completeNode(node.id);
+          progressionMap.show();
+        }, 1500);
+      }
+      
+      // Handle store node
+      function handleStoreNode(node) {
+        // Open upgrade modal
+        const modal = document.getElementById('modal-overlay');
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+          <div class="modal" style="max-width: 750px; max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header">
+              <h3>🏪 ${node.locationName}</h3>
+              <button class="modal-close" id="close-store-modal">&times;</button>
+            </div>
+            <div class="workshop-intro">
+              <p>📚 <strong>Research Points:</strong> <span style="color: var(--ghost-glow); font-size: 1.2em;">${game.research}</span></p>
+              ${node.rewards.discount ? `<p style="color: var(--spirit-green);">🏷️ ${node.rewards.discount}% discount on upgrades!</p>` : ''}
+            </div>
+            <div id="dice-inventory-content" style="padding: 0 20px 20px;"></div>
+            <div style="padding: 20px; border-top: 1px solid var(--border-color);">
+              <button class="btn btn-primary" id="leave-store" style="width: 100%;">Leave Store</button>
+            </div>
+          </div>
+        `;
+        
+        // Render dice inventory
+        if (diceUI) {
+          diceUI.renderInventoryPanel(document.getElementById('dice-inventory-content'));
+        }
+        
+        // Close handlers
+        document.getElementById('close-store-modal')?.addEventListener('click', () => {
+          modal.style.display = 'none';
+          progressionMap.completeNode(node.id);
+          progressionMap.show();
+        });
+        
+        document.getElementById('leave-store')?.addEventListener('click', () => {
+          modal.style.display = 'none';
+          progressionMap.completeNode(node.id);
+          progressionMap.show();
+        });
+      }
+      
+      // Handle mystery node
+      function handleMysteryNode(node, difficulty) {
+        const events = ['research', 'rest', 'elite', 'trap'];
+        const randomEvent = events[Math.floor(Math.random() * events.length)];
+        
+        window.uiBar?.logEvent('Something strange happens...', 'warning');
+        
+        setTimeout(() => {
+          switch (randomEvent) {
+            case 'research':
+              window.uiBar?.logEvent('You found old research notes!', 'success');
+              challengeUI.showAvailableChallenges('easy');
+              break;
+            case 'rest':
+              handleRestNode({ ...node, rewards: { sanity: 15 } });
+              break;
+            case 'elite':
+              window.uiBar?.logEvent('A powerful presence awakens!', 'danger');
+              challengeUI.showAvailableChallenges('hard');
+              break;
+            case 'trap':
+              game.sanity = Math.max(0, game.sanity - 10);
+              document.getElementById('sanity-value').textContent = game.sanity;
+              document.getElementById('sanity-fill').style.width = `${(game.sanity / game.maxSanity) * 100}%`;
+              visualEffects.showComboText('-10 Sanity!', '#c94a4a');
+              window.uiBar?.logEvent('You triggered a curse! -10 sanity', 'danger');
+              setTimeout(() => {
+                progressionMap.completeNode(node.id);
+                progressionMap.show();
+              }, 1500);
+              break;
+          }
+        }, 1000);
+      }
+      
+      // Map button opens progression map
       document.getElementById('map-btn')?.addEventListener('click', () => {
-        mapUI.show();
+        progressionMap.show();
       });
       
       // Initialize 3D Dice system
@@ -597,11 +854,31 @@
         diceUI = new DiceUI(game);
         window.diceUI = diceUI;
         
+        // Initialize UI Bar
+        const uiBar = new UIBar(game);
+        uiBar.init(diceUI, challengeUI);
+        window.uiBar = uiBar;
+        
+        // Store reference to shapes/colors for UI bar
+        diceUI.DIE_SHAPES = diceUI.DIE_SHAPES || {};
+        diceUI.DIE_COLORS = diceUI.DIE_COLORS || {};
+        
         // Set up 3D dice view when game starts
         const startBtn = document.getElementById('start-btn');
         startBtn.addEventListener('click', () => {
           // Small delay to allow game screen to become visible
-          setTimeout(init3DDice, 200);
+          setTimeout(() => {
+            init3DDice();
+            // Update UI bar after dice are initialized
+            setTimeout(() => {
+              uiBar.refresh();
+              // Show progression map after game initializes
+              setTimeout(() => {
+                progressionMap.show();
+                uiBar.logEvent('Choose your path through Blackwood...', 'info');
+              }, 500);
+            }, 300);
+          }, 200);
         });
         
         // Roll all button
@@ -624,13 +901,12 @@
               diceContainer.classList.add('dice-rolling');
             }
             
+            // Update UI bar roll button
+            uiBar.updateRollButton(true, game.rollsRemaining);
+            uiBar.logEvent('Rolling dice...', 'info');
+            
             diceUI.rollAll();
             document.getElementById('rolls-remaining').textContent = game.rollsRemaining;
-            
-            // Disable button while rolling
-            const btn = document.getElementById('roll-all-3d');
-            btn.disabled = true;
-            btn.textContent = '🎲 Rolling...';
             
             // Mark dice as rolling in the display
             document.querySelectorAll('.die-value-chip').forEach(chip => {
@@ -644,6 +920,13 @@
             const rollsCount = document.getElementById('rolls-remaining');
             rollsCount.style.color = '#c94a4a';
             setTimeout(() => rollsCount.style.color = '', 500);
+            
+            // Flash the UI bar badge too
+            const rollsBadge = document.getElementById('rolls-badge');
+            if (rollsBadge) {
+              rollsBadge.style.background = '#c94a4a';
+              setTimeout(() => rollsBadge.style.background = '', 500);
+            }
           }
         });
         
@@ -653,18 +936,34 @@
             // Reset rolls for new challenge
             game.rollsRemaining = game.maxRolls;
             game.rollsUsedThisChallenge = 0;
-            document.getElementById('rolls-remaining').textContent = game.rollsRemaining;
             
-            // Unlock all dice
+            // Update UI bar
+            uiBar.updateRollButton(false, game.rollsRemaining);
+            
+            // Unlock all dice and re-dock them
             if (diceUI && diceUI.dice3d) {
               diceUI.dice3d.dice.forEach(die => {
                 die.locked = false;
               });
+              diceUI.dice3d.dockAllDice();
+              
+              const diceContainer = document.getElementById('dice-3d-container');
+              if (diceContainer) {
+                diceContainer.classList.add('dice-docked');
+              }
             }
             
             // Show challenge selection
             challengeUI.showAvailableChallenges();
           }
+        });
+        
+        // Listen for challenge selection events
+        window.addEventListener('challengeSelected', (e) => {
+          uiBar.updateQuestPreview();
+          uiBar.updateQuestExpanded();
+          uiBar.logEvent(`Started: ${e.detail.challenge.name}`, 'info');
+          uiBar.updateDicePreview();
         });
         
         // Upgrade dice button (main one in dice area)
@@ -740,6 +1039,7 @@
           }
           
           // Check challenge conditions
+          let conditionResult = null;
           if (challengeUI && challengeUI.currentChallenge) {
             const diceForCheck = diceUI.inventory.equippedDice.map((die, i) => ({
               value: results[i]?.value || 0,
@@ -748,7 +1048,10 @@
               sides: parseInt((die.shape || 'd6').replace('d', '')) || 6
             }));
             
-            const conditionResult = challengeUI.checkConditions(diceForCheck);
+            conditionResult = challengeUI.checkConditions(diceForCheck);
+            
+            // Store condition results for UI bar
+            challengeUI.lastConditionResults = conditionResult.conditions;
             
             // Animate condition checkmarks
             document.querySelectorAll('.condition-item').forEach((item, index) => {
@@ -765,6 +1068,9 @@
                   visualEffects.showComboText('SUCCESS!', '#4a9b6a');
                   visualEffects.screenShake('big');
                   visualEffects.flashChallengeSuccess();
+                  uiBar.logEvent(`Challenge complete! +${challengeUI.currentChallenge?.reward?.research || 0} research`, 'success');
+                } else {
+                  uiBar.logEvent('Challenge failed - out of rolls', 'danger');
                 }
                 
                 const reward = challengeUI.completeChallenge(conditionResult.success);
@@ -784,6 +1090,18 @@
                 document.getElementById('research-value').textContent = game.research;
                 document.getElementById('sanity-value').textContent = game.sanity;
                 document.getElementById('sanity-fill').style.width = `${(game.sanity / game.maxSanity) * 100}%`;
+                
+                // Update UI bar
+                uiBar.updateQuestPreview();
+                uiBar.refresh();
+                
+                // Complete the current node and show map for next selection
+                if (game.currentNode && progressionMap) {
+                  setTimeout(() => {
+                    progressionMap.completeNode(game.currentNode.id);
+                    progressionMap.show();
+                  }, 1500);
+                }
               }, 1000);
             }
           }
@@ -794,18 +1112,16 @@
             diceContainer.classList.remove('dice-rolling');
           }
           
-          // Re-enable roll button
-          const btn = document.getElementById('roll-all-3d');
-          if (btn) {
-            btn.disabled = game.rollsRemaining <= 0;
-            btn.textContent = game.rollsRemaining > 0 ? '🎲 Roll All' : 'No Rolls Left';
-          }
+          // Update UI Bar
+          uiBar.updateRollButton(false, game.rollsRemaining);
+          uiBar.updateDicePreview();
+          uiBar.updateQuestPreview();
+          uiBar.updateQuestExpanded();
           
-          // Update mini inventory
-          const miniInv = document.getElementById('dice-inventory-mini');
-          if (miniInv && diceUI) {
-            diceUI.renderMiniInventory(miniInv);
-          }
+          // Log the roll result
+          const totalScore = scoreResult?.finalScore || results.reduce((sum, r) => sum + (r.value || 0), 0);
+          uiBar.logEvent(`Rolled ${results.map(r => r.value).join(', ')} = ${totalScore}`, 
+            scoreResult?.bonuses?.length > 0 ? 'success' : 'info');
           
           // Update research display
           const researchDisplay = document.getElementById('research-display');
