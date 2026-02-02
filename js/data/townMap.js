@@ -91,6 +91,7 @@ export const LOCATION_THEMES = {
   home: { name: 'Your House', icon: '🏠', atmosphere: 'safe' },
   school: { name: 'Blackwood High', icon: '🏫', atmosphere: 'eerie' },
   friendsHouse: { name: "Friend's House", icon: '🏡', atmosphere: 'comfortable' },
+  bestFriendHouse: { name: "Best Friend's House", icon: '🏡', atmosphere: 'comfortable' },
   library: { name: 'Public Library', icon: '📖', atmosphere: 'quiet' },
   park: { name: 'Foggy Park', icon: '🌳', atmosphere: 'spooky' },
   diner: { name: 'Midnight Diner', icon: '🍽️', atmosphere: 'warm' },
@@ -116,11 +117,12 @@ export const TIER_CONFIG = {
     themes: ['home'],
     difficulty: 0
   },
-  1: { // Starting locations (adjacent to Home) - always at least 2
-    nodeCount: { min: 2, max: 4 },
-    types: ['research', 'recruit', 'mystery', 'rest'],
-    weights: { research: 35, recruit: 30, mystery: 20, rest: 15 },
-    themes: ['school', 'friendsHouse', 'park', 'diner', 'store'],
+  1: { // FIXED: Always exactly 2 locations adjacent to Home — School + Best Friend's House
+    fixed: true,
+    fixedNodes: [
+      { type: 'research', theme: 'school', name: 'Blackwood High' },
+      { type: 'recruit', theme: 'bestFriendHouse', name: "Best Friend's House" }
+    ],
     difficulty: 1
   },
   2: { // Building up - 3-4 nodes
@@ -190,7 +192,9 @@ export class MapGenerator {
     // Generate each tier
     for (let tier = 0; tier < totalTiers; tier++) {
       const tierConfig = TIER_CONFIG[tier] || TIER_CONFIG[6];
-      const tierNodes = this.generateTier(tier, tierConfig, map);
+      const tierNodes = tierConfig.fixed && tierConfig.fixedNodes
+        ? this.generateFixedTier(tier, tierConfig, map)
+        : this.generateTier(tier, tierConfig, map);
       map.tiers.push(tierNodes);
       
       // Add nodes to lookup
@@ -210,7 +214,42 @@ export class MapGenerator {
     return map;
   }
 
-  // Generate nodes for a single tier
+  // Generate fixed tier (e.g. tier 1: always School + Best Friend's House)
+  generateFixedTier(tierIndex, config, map) {
+    const nodes = [];
+    const fixedNodes = config.fixedNodes || [];
+
+    for (let i = 0; i < fixedNodes.length; i++) {
+      const def = fixedNodes[i];
+      const nodeType = def.type || 'research';
+      const theme = def.theme || 'school';
+      const themeData = LOCATION_THEMES[theme] || LOCATION_THEMES.school;
+      const typeData = NODE_TYPES[nodeType];
+
+      const node = {
+        id: `node_${tierIndex}_${i}`,
+        tier: tierIndex,
+        index: i,
+        type: nodeType,
+        theme: theme,
+        ...typeData,
+        locationName: def.name || themeData.name || theme,
+        locationIcon: themeData.icon || '📍',
+        atmosphere: themeData.atmosphere || 'normal',
+        difficulty: config.difficulty,
+        connections: { in: [], out: [] },
+        completed: false,
+        available: false,
+        rewards: this.generateRewards(nodeType, config.difficulty)
+      };
+
+      nodes.push(node);
+    }
+
+    return nodes;
+  }
+
+  // Generate nodes for a single tier (random)
   generateTier(tierIndex, config, map) {
     const nodes = [];
     

@@ -390,6 +390,19 @@
               </div>
             </div>
             
+            <!-- Roll Dice Button (in tray area) -->
+            <div class="dice-tray-actions">
+              <button id="roll-all-3d" class="btn btn-primary roll-dice-btn">
+                <span class="btn-icon">🎲</span>
+                <span class="roll-label">Roll</span>
+                <span class="rolls-badge" id="rolls-badge">3</span>
+              </button>
+              <button id="skip-challenge-btn" class="btn btn-warning skip-challenge-btn" style="display: none;">
+                <span class="btn-icon">⏭️</span>
+                <span>Skip</span>
+              </button>
+            </div>
+            
             <!-- Fallback 2D Dice Tray (for non-WebGL) -->
             <div id="dice-tray" class="dice-tray" style="display: none;">
               <!-- 2D Dice will be rendered here as fallback -->
@@ -499,17 +512,8 @@
             </div>
           </div>
           
-          <!-- ACTION BUTTONS (Far Right) -->
+          <!-- ACTION BUTTONS (Far Right) - Map, New Challenge (Roll is in dice tray) -->
           <div class="ui-actions">
-            <button id="roll-all-3d" class="ui-action-btn btn-primary">
-              <span class="btn-icon">🎲</span>
-              <span>Roll</span>
-              <span class="rolls-badge" id="rolls-badge">3</span>
-            </button>
-            <button id="skip-challenge-btn" class="ui-action-btn btn-warning">
-              <span class="btn-icon">⏭️</span>
-              <span>Skip</span>
-            </button>
             <button id="map-btn" class="ui-action-btn btn-secondary">
               <span class="btn-icon">🗺️</span>
               <span>Map</span>

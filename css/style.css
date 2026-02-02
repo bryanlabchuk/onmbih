@@ -1895,7 +1895,7 @@ h3 { font-size: 1.25rem; }
 }
 
 .dice-3d-container.dice-docked::after {
-  content: '🎲 Click "Roll All" to begin';
+  content: '🎲 Click Roll below to begin';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1941,6 +1941,73 @@ h3 { font-size: 1.25rem; }
   padding: 5px 15px;
   border-radius: 20px;
   z-index: 5;
+}
+
+/* Dice Tray Actions - Roll button next to tray */
+.dice-tray-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 0;
+  flex-wrap: wrap;
+}
+
+.dice-tray-actions .roll-dice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-family: var(--font-display);
+  background: linear-gradient(180deg, var(--ghost-blue) 0%, #3a6a8a 100%);
+  border: 2px solid var(--ghost-blue);
+  border-radius: var(--border-radius);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dice-tray-actions .roll-dice-btn:hover:not(:disabled) {
+  transform: scale(1.03);
+  box-shadow: 0 4px 20px rgba(106, 163, 199, 0.4);
+}
+
+.dice-tray-actions .roll-dice-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dice-tray-actions .rolls-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.dice-tray-actions .skip-challenge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  background: var(--bg-dark);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dice-tray-actions .skip-challenge-btn:hover {
+  border-color: var(--candle-orange);
+  background: var(--bg-medium);
 }
 
 /* Dice Controls Bar */
