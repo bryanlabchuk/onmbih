@@ -684,10 +684,12 @@ export class DiceInventory {
     const die = {
       id: `die_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: dieConfig.name || 'Standard Die',
+      shape: dieConfig.shape || 'd6',
+      color: dieConfig.color || 'white',
       faceValues: dieConfig.faceValues || [1, 2, 3, 4, 5, 6],
       faceColors: dieConfig.faceColors || Array(6).fill(FACE_COLORS.default),
       pipColor: dieConfig.pipColor || PIP_COLORS.default,
-      modifiers: dieConfig.modifiers || {},
+      modifiers: dieConfig.modifiers || [],
       rarity: dieConfig.rarity || 'common',
       equipped: false
     };

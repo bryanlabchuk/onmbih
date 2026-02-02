@@ -1,43 +1,118 @@
 // Dice UI - Inventory, Selection, and Upgrade Interface
 import { Dice3DSystem, DiceInventory, FACE_COLORS, PIP_COLORS } from './dice3d.js';
+import { 
+  DIE_SHAPES, 
+  DIE_COLORS, 
+  DIE_MODIFIERS, 
+  SCORING_BONUSES,
+  RESEARCH_MILESTONES,
+  AdvancedDie,
+  ScoreCalculator,
+  DiceUpgradeManager
+} from '../data/diceSystem.js';
 
 // Upgrade costs
 const UPGRADE_COSTS = {
-  valueChange: 15,      // Cost per +1 or -1 to face value
-  colorChange: 5,       // Cost to change face color
-  pipColorChange: 10,   // Cost to change pip color
-  specialModifier: 25   // Cost for special effects
+  faceValue: 15,        // Cost per +1 or -1 to face value
+  shape: 'varies',      // Depends on shape
+  color: 20,            // Cost to change die color
+  modifier: 'varies'    // Depends on modifier
 };
 
 export class DiceUI {
   constructor(game) {
     this.game = game;
     this.inventory = new DiceInventory();
+    this.upgradeManager = new DiceUpgradeManager();
+    this.scoreCalculator = new ScoreCalculator('research');
     this.dice3d = null;
     this.selectedDie = null;
     this.selectedFace = null;
     this.container = null;
     this.initialized = false;
     this.pendingUpgradeCost = 0;
+    this.lastScoreResult = null;
     
     // Initialize with starter dice
     this.initStarterDice();
   }
 
   initStarterDice() {
-    // Add 5 starter dice with slight variations
+    // Add 5 starter d6 dice
     const starterConfigs = [
-      { name: 'Worn Die', faceValues: [1, 2, 3, 4, 5, 6], rarity: 'common' },
-      { name: 'Dusty Die', faceValues: [1, 2, 3, 4, 5, 6], rarity: 'common' },
-      { name: 'Chipped Die', faceValues: [1, 2, 3, 4, 5, 6], rarity: 'common' },
-      { name: 'Faded Die', faceValues: [1, 2, 3, 4, 5, 6], rarity: 'common' },
-      { name: 'Old Die', faceValues: [1, 2, 3, 4, 5, 6], rarity: 'common' }
+      { name: 'Worn Die', shape: 'd6', color: 'white', rarity: 'common' },
+      { name: 'Dusty Die', shape: 'd6', color: 'white', rarity: 'common' },
+      { name: 'Chipped Die', shape: 'd6', color: 'white', rarity: 'common' },
+      { name: 'Faded Die', shape: 'd6', color: 'white', rarity: 'common' },
+      { name: 'Old Die', shape: 'd6', color: 'white', rarity: 'common' }
     ];
     
     starterConfigs.forEach(config => {
-      const die = this.inventory.addDie(config);
+      // Create with base d6 values
+      const fullConfig = {
+        ...config,
+        faceValues: [...DIE_SHAPES.d6.baseValues],
+        faceColors: Array(6).fill(DIE_COLORS.white.hex),
+        pipColor: '#2a2d38',
+        modifiers: []
+      };
+      const die = this.inventory.addDie(fullConfig);
       this.inventory.equipDie(die.id);
     });
+  }
+
+  // Check for research milestone unlocks
+  checkMilestones() {
+    if (!this.game) return [];
+    
+    const newUnlocks = this.upgradeManager.checkMilestones(this.game.research);
+    
+    // Show notification for each unlock
+    newUnlocks.forEach(unlock => {
+      this.showMilestoneNotification(unlock);
+    });
+    
+    return newUnlocks;
+  }
+
+  showMilestoneNotification(unlock) {
+    const notification = document.createElement('div');
+    notification.className = 'milestone-notification';
+    notification.innerHTML = `
+      <div class="notification-content">
+        <span class="notification-icon">🎉</span>
+        <div class="notification-text">
+          <div class="notification-title">Research Milestone!</div>
+          <div class="notification-desc">${unlock.description}</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.classList.add('fade-out');
+      setTimeout(() => notification.remove(), 500);
+    }, 4000);
+  }
+
+  // Calculate score for current dice
+  calculateScore(context = 'research') {
+    this.scoreCalculator.context = context;
+    
+    const diceForScoring = this.getDiceValues().map((d, i) => ({
+      value: d.value,
+      currentValue: d.value,
+      color: this.inventory.equippedDice[i]?.color || 'white',
+      shape: this.inventory.equippedDice[i]?.shape || 'd6',
+      modifiers: this.inventory.equippedDice[i]?.modifiers || []
+    }));
+    
+    const result = this.scoreCalculator.calculate(diceForScoring, [], {
+      multiplier: this.game?.modifiers?.scoreMultiplier || 1
+    });
+    
+    this.lastScoreResult = result;
+    return result;
   }
 
   init3DView(container) {
@@ -199,48 +274,86 @@ export class DiceUI {
     const container = document.getElementById('dice-values-display');
     const totalEl = document.getElementById('dice-total');
     const researchEl = document.getElementById('research-display');
+    const bonusesEl = document.getElementById('score-bonuses');
     
     if (!container) return;
     
     // Get values from 3D dice if available, otherwise from game dice
     let values = [];
     if (this.dice3d && this.dice3d.dice.length > 0) {
-      values = this.dice3d.dice.map(d => ({
+      values = this.dice3d.dice.map((d, i) => ({
         value: d.mesh.userData.currentValue,
-        locked: d.locked
+        locked: d.locked,
+        shape: this.inventory.equippedDice[i]?.shape || 'd6',
+        color: this.inventory.equippedDice[i]?.color || 'white'
       }));
     } else if (this.game && this.game.dice) {
-      values = this.game.dice.map(d => ({
+      values = this.game.dice.map((d, i) => ({
         value: d.currentValue,
-        locked: d.locked
+        locked: d.locked,
+        shape: this.inventory.equippedDice[i]?.shape || 'd6',
+        color: this.inventory.equippedDice[i]?.color || 'white'
       }));
     } else {
-      // Fallback for display
-      values = this.inventory.equippedDice.map(() => ({ value: null, locked: false }));
+      values = this.inventory.equippedDice.map(die => ({ 
+        value: null, 
+        locked: false,
+        shape: die?.shape || 'd6',
+        color: die?.color || 'white'
+      }));
     }
     
-    let total = 0;
-    
+    // Render dice chips with shape and color info
     container.innerHTML = values.map((d, i) => {
       const value = d.value !== null && d.value !== undefined ? d.value : '?';
-      if (typeof d.value === 'number') total += d.value;
+      const shapeIcon = DIE_SHAPES[d.shape]?.icon || '🎲';
+      const colorHex = DIE_COLORS[d.color]?.hex || '#e8e4dc';
+      const invDie = this.inventory.equippedDice[i];
       
       return `
         <div class="die-value-chip ${d.locked ? 'locked' : ''}" 
              data-index="${i}"
-             title="Die ${i + 1}${d.locked ? ' (Locked)' : ' - Click Roll to see value'}">
-          ${value}
+             style="border-color: ${colorHex};"
+             title="${invDie?.name || 'Die'} (${DIE_SHAPES[d.shape]?.name || 'D6'})${d.locked ? ' [Locked]' : ''}">
+          <span class="die-shape-icon">${shapeIcon}</span>
+          <span class="die-value">${value}</span>
         </div>
       `;
     }).join('');
     
-    if (totalEl) {
-      totalEl.textContent = total;
+    // Calculate score with bonuses
+    const hasValues = values.some(v => v.value !== null && v.value !== undefined);
+    
+    if (hasValues) {
+      const scoreResult = this.calculateScore(this.game?.phase === 'challenge' ? 'challenge' : 'research');
+      
+      if (totalEl) {
+        totalEl.innerHTML = `
+          <span class="base-total">${scoreResult.baseTotal}</span>
+          ${scoreResult.bonuses.length > 0 ? `<span class="bonus-total">+${scoreResult.bonuses.reduce((s, b) => s + b.points, 0)}</span>` : ''}
+          <span class="final-total">= ${scoreResult.finalScore}</span>
+        `;
+      }
+      
+      // Show bonuses
+      if (bonusesEl && scoreResult.bonuses.length > 0) {
+        bonusesEl.innerHTML = scoreResult.bonuses.map(b => 
+          `<span class="bonus-tag">${b.name} +${b.points}</span>`
+        ).join('');
+        bonusesEl.style.display = 'flex';
+      } else if (bonusesEl) {
+        bonusesEl.style.display = 'none';
+      }
+    } else if (totalEl) {
+      totalEl.textContent = '0';
     }
     
     if (researchEl && this.game) {
       researchEl.textContent = this.game.research || 0;
     }
+    
+    // Check for milestone unlocks
+    this.checkMilestones();
   }
 
   // Show the dice area
@@ -423,6 +536,9 @@ export class DiceUI {
 
   renderUpgradeModal(die) {
     const currentResearch = this.game ? this.game.research : 0;
+    const availableUpgrades = this.upgradeManager.getAvailableUpgrades(die);
+    const shapeInfo = DIE_SHAPES[die.shape] || DIE_SHAPES.d6;
+    const colorInfo = DIE_COLORS[die.color] || DIE_COLORS.white;
     
     return `
       <div class="modal upgrade-modal">
@@ -444,67 +560,104 @@ export class DiceUI {
         </div>
         
         <div class="upgrade-content">
-          <div class="die-3d-preview" id="die-preview-3d">
+          <div class="die-preview-section">
             <div class="die-preview-placeholder">
-              <div class="preview-die ${die.rarity}" 
-                   style="background: ${die.faceColors[this.selectedFace] || FACE_COLORS.default}; color: ${die.pipColor || PIP_COLORS.default};">
-                ${die.faceValues[this.selectedFace]}
+              <div class="preview-die-large" 
+                   style="background: ${colorInfo.hex}; border-color: ${colorInfo.hex};">
+                <span class="shape-icon">${shapeInfo.icon}</span>
+                <span class="die-name-small">${shapeInfo.name}</span>
               </div>
-              <div class="preview-label">Face ${this.selectedFace + 1}</div>
+              <div class="die-stats">
+                <div class="stat-row"><span>Shape:</span> <strong>${shapeInfo.name}</strong></div>
+                <div class="stat-row"><span>Sides:</span> <strong>${shapeInfo.sides}</strong></div>
+                <div class="stat-row"><span>Color:</span> <strong>${colorInfo.name}</strong></div>
+                <div class="stat-row"><span>Values:</span> <strong>${die.faceValues.join(', ')}</strong></div>
+                ${die.modifiers?.length > 0 ? `<div class="stat-row"><span>Mods:</span> <strong>${die.modifiers.map(m => DIE_MODIFIERS[m]?.name || m).join(', ')}</strong></div>` : ''}
+              </div>
             </div>
             
             <div class="upgrade-tip">
-              <p>💡 <strong>Tip:</strong> Higher face values help you meet spirit challenge requirements!</p>
+              <p>💡 Earn more research to unlock new shapes, colors, and modifiers!</p>
+              <p class="next-unlock">${this.getNextMilestoneText()}</p>
             </div>
           </div>
           
           <div class="upgrade-options">
-            <div class="face-selector">
-              <h4>Select Face to Modify</h4>
+            <!-- Die Shape -->
+            <div class="upgrade-section">
+              <h4>Die Shape ${availableUpgrades.shapes.length === 0 ? '<span class="locked-tag">🔒 Locked</span>' : ''}</h4>
+              ${availableUpgrades.shapes.length > 0 ? `
+                <div class="shape-grid">
+                  ${availableUpgrades.shapes.map(shapeId => {
+                    const shape = DIE_SHAPES[shapeId];
+                    return `
+                      <button class="shape-btn" data-shape="${shapeId}" title="${shape.name} - ${shape.sides} sides (${shape.unlockCost} research)">
+                        <span class="shape-icon">${shape.icon}</span>
+                        <span class="shape-name">${shape.name}</span>
+                        <span class="shape-cost">${shape.unlockCost}</span>
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              ` : '<p class="locked-text">Reach research milestones to unlock more shapes!</p>'}
+            </div>
+            
+            <!-- Die Color -->
+            <div class="upgrade-section">
+              <h4>Die Color ${availableUpgrades.colors.length === 0 ? '<span class="locked-tag">🔒 Locked</span>' : ''}</h4>
+              ${availableUpgrades.colors.length > 0 || this.upgradeManager.unlockedColors.length > 1 ? `
+                <div class="color-grid-large">
+                  ${this.upgradeManager.unlockedColors.map(colorId => {
+                    const color = DIE_COLORS[colorId];
+                    const isSelected = die.color === colorId;
+                    return `
+                      <button class="color-btn-large ${isSelected ? 'selected' : ''}" 
+                              data-color="${colorId}" 
+                              style="background: ${color.hex};"
+                              title="${color.name}${color.bonus ? ` (+${color.bonus} bonus)` : ''} (${UPGRADE_COSTS.color} research)">
+                        <span class="color-name">${color.name}</span>
+                        ${color.bonus ? `<span class="color-bonus">+${color.bonus}</span>` : ''}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              ` : '<p class="locked-text">Reach 25 research to unlock colors!</p>'}
+            </div>
+            
+            <!-- Face Values -->
+            <div class="upgrade-section">
+              <h4>Face Values <span class="cost-tag">${UPGRADE_COSTS.faceValue} research each</span></h4>
               <div class="face-grid">
                 ${die.faceValues.map((val, i) => `
-                  <button class="face-btn ${i === this.selectedFace ? 'selected' : ''}" data-face="${i}"
-                          style="background: ${die.faceColors[i] || FACE_COLORS.default}; color: ${die.pipColor || PIP_COLORS.default};">
-                    <span class="face-value">${val}</span>
-                  </button>
+                  <div class="face-edit-group">
+                    <button class="face-dec" data-face="${i}">−</button>
+                    <span class="face-val" data-face="${i}">${val}</span>
+                    <button class="face-inc" data-face="${i}">+</button>
+                  </div>
                 `).join('')}
               </div>
             </div>
             
+            <!-- Modifiers -->
             <div class="upgrade-section">
-              <h4>Increase Face Value <span class="cost-tag">${UPGRADE_COSTS.valueChange} research each</span></h4>
-              <div class="value-controls">
-                <button class="value-btn" data-change="-1" title="Decrease (-${UPGRADE_COSTS.valueChange} research)">−</button>
-                <span class="current-value" id="current-face-value">${die.faceValues[this.selectedFace]}</span>
-                <button class="value-btn" data-change="1" title="Increase (+${UPGRADE_COSTS.valueChange} research)">+</button>
-              </div>
-              <div class="value-range">Range: 0 - 9</div>
-            </div>
-            
-            <div class="upgrade-section">
-              <h4>Face Color <span class="cost-tag">${UPGRADE_COSTS.colorChange} research</span></h4>
-              <div class="color-grid">
-                ${Object.entries(FACE_COLORS).map(([name, color]) => `
-                  <button class="color-btn ${die.faceColors[this.selectedFace] === color ? 'selected' : ''}" 
-                          data-color="${color}" 
-                          data-name="${name}"
-                          style="background: ${color}" 
-                          title="${name} (${UPGRADE_COSTS.colorChange} research)"></button>
-                `).join('')}
-              </div>
-            </div>
-            
-            <div class="upgrade-section">
-              <h4>Pip Color <span class="cost-tag">${UPGRADE_COSTS.pipColorChange} research</span></h4>
-              <div class="color-grid">
-                ${Object.entries(PIP_COLORS).map(([name, color]) => `
-                  <button class="pip-color-btn ${die.pipColor === color ? 'selected' : ''}" 
-                          data-color="${color}" 
-                          data-name="${name}"
-                          style="background: ${color}" 
-                          title="${name} (${UPGRADE_COSTS.pipColorChange} research)"></button>
-                `).join('')}
-              </div>
+              <h4>Modifiers ${availableUpgrades.modifiers.length === 0 && this.upgradeManager.unlockedModifiers.length === 0 ? '<span class="locked-tag">🔒 Locked</span>' : ''}</h4>
+              ${this.upgradeManager.unlockedModifiers.length > 0 ? `
+                <div class="modifier-grid">
+                  ${this.upgradeManager.unlockedModifiers.map(modId => {
+                    const mod = DIE_MODIFIERS[modId];
+                    const isApplied = die.modifiers?.includes(modId);
+                    return `
+                      <button class="modifier-btn ${isApplied ? 'applied' : ''}" 
+                              data-modifier="${modId}"
+                              ${isApplied ? 'disabled' : ''}
+                              title="${mod.description} (${mod.unlockCost} research)">
+                        <span class="mod-name">${mod.name}</span>
+                        <span class="mod-cost">${isApplied ? '✓' : mod.unlockCost}</span>
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              ` : '<p class="locked-text">Reach 75 research to unlock modifiers!</p>'}
             </div>
           </div>
         </div>
@@ -519,36 +672,67 @@ export class DiceUI {
     `;
   }
 
+  getNextMilestoneText() {
+    const currentResearch = this.game ? this.game.research : 0;
+    const milestones = Object.entries(RESEARCH_MILESTONES)
+      .map(([threshold, data]) => ({ threshold: parseInt(threshold), ...data }))
+      .filter(m => m.threshold > currentResearch)
+      .sort((a, b) => a.threshold - b.threshold);
+    
+    if (milestones.length === 0) {
+      return '🎉 All milestones reached!';
+    }
+    
+    const next = milestones[0];
+    return `Next unlock at ${next.threshold} research: ${next.description}`;
+  }
+
   bindUpgradeEvents(modal) {
     const die = this.selectedDie;
     if (!die) return;
     
     // Store original values to calculate cost
     const originalValues = [...die.faceValues];
-    const originalColors = [...die.faceColors];
-    const originalPipColor = die.pipColor;
+    const originalShape = die.shape;
+    const originalColor = die.color;
+    const originalModifiers = [...(die.modifiers || [])];
     this.pendingUpgradeCost = 0;
+    
+    const pendingChanges = {
+      faceChanges: 0,
+      shapeChange: null,
+      colorChange: null,
+      newModifiers: []
+    };
     
     const updateCostDisplay = () => {
       let cost = 0;
       
-      // Calculate value change cost
-      for (let i = 0; i < 6; i++) {
-        const diff = Math.abs(die.faceValues[i] - originalValues[i]);
-        cost += diff * UPGRADE_COSTS.valueChange;
-      }
-      
-      // Calculate color change cost
-      for (let i = 0; i < 6; i++) {
-        if (die.faceColors[i] !== originalColors[i]) {
-          cost += UPGRADE_COSTS.colorChange;
+      // Calculate face value change cost
+      for (let i = 0; i < die.faceValues.length; i++) {
+        if (i < originalValues.length) {
+          const diff = Math.abs(die.faceValues[i] - originalValues[i]);
+          cost += diff * UPGRADE_COSTS.faceValue;
         }
       }
+      pendingChanges.faceChanges = cost;
       
-      // Calculate pip color cost
-      if (die.pipColor !== originalPipColor) {
-        cost += UPGRADE_COSTS.pipColorChange;
+      // Shape change cost
+      if (pendingChanges.shapeChange && pendingChanges.shapeChange !== originalShape) {
+        cost += DIE_SHAPES[pendingChanges.shapeChange]?.unlockCost || 0;
       }
+      
+      // Color change cost
+      if (pendingChanges.colorChange && pendingChanges.colorChange !== originalColor) {
+        cost += UPGRADE_COSTS.color;
+      }
+      
+      // Modifier costs
+      pendingChanges.newModifiers.forEach(modId => {
+        if (!originalModifiers.includes(modId)) {
+          cost += DIE_MODIFIERS[modId]?.unlockCost || 0;
+        }
+      });
       
       this.pendingUpgradeCost = cost;
       
@@ -576,74 +760,131 @@ export class DiceUI {
       }
     };
     
-    // Close buttons
-    modal.querySelector('#close-upgrade').addEventListener('click', () => {
-      // Restore original values on cancel
+    const restoreOriginal = () => {
       die.faceValues = [...originalValues];
-      die.faceColors = [...originalColors];
-      die.pipColor = originalPipColor;
+      die.shape = originalShape;
+      die.color = originalColor;
+      die.modifiers = [...originalModifiers];
+    };
+    
+    // Close buttons
+    modal.querySelector('#close-upgrade')?.addEventListener('click', () => {
+      restoreOriginal();
       this.closeUpgradeModal();
     });
-    modal.querySelector('#cancel-upgrade').addEventListener('click', () => {
-      die.faceValues = [...originalValues];
-      die.faceColors = [...originalColors];
-      die.pipColor = originalPipColor;
+    modal.querySelector('#cancel-upgrade')?.addEventListener('click', () => {
+      restoreOriginal();
       this.closeUpgradeModal();
     });
     
-    // Face selection
-    modal.querySelectorAll('.face-btn').forEach(btn => {
+    // Face value increment/decrement
+    modal.querySelectorAll('.face-inc').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.selectedFace = parseInt(btn.dataset.face);
-        modal.querySelectorAll('.face-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        modal.querySelector('#current-face-value').textContent = die.faceValues[this.selectedFace];
-        this.updateUpgradePreview(modal, die);
+        const faceIndex = parseInt(btn.dataset.face);
+        const maxValue = DIE_SHAPES[die.shape]?.sides || 6;
+        const newValue = Math.min(maxValue + 3, die.faceValues[faceIndex] + 1);
+        die.faceValues[faceIndex] = newValue;
+        modal.querySelector(`.face-val[data-face="${faceIndex}"]`).textContent = newValue;
+        updateCostDisplay();
       });
     });
     
-    // Value controls
-    modal.querySelectorAll('.value-btn').forEach(btn => {
+    modal.querySelectorAll('.face-dec').forEach(btn => {
       btn.addEventListener('click', () => {
-        const change = parseInt(btn.dataset.change);
-        const newValue = Math.max(0, Math.min(9, die.faceValues[this.selectedFace] + change));
-        die.faceValues[this.selectedFace] = newValue;
-        modal.querySelector('#current-face-value').textContent = newValue;
-        modal.querySelector(`.face-btn[data-face="${this.selectedFace}"] .face-value`).textContent = newValue;
-        this.updateUpgradePreview(modal, die);
+        const faceIndex = parseInt(btn.dataset.face);
+        const newValue = Math.max(0, die.faceValues[faceIndex] - 1);
+        die.faceValues[faceIndex] = newValue;
+        modal.querySelector(`.face-val[data-face="${faceIndex}"]`).textContent = newValue;
+        updateCostDisplay();
+      });
+    });
+    
+    // Shape selection
+    modal.querySelectorAll('.shape-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const shapeId = btn.dataset.shape;
+        modal.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        pendingChanges.shapeChange = shapeId;
+        
+        // Update face values to new shape's base values
+        die.shape = shapeId;
+        die.faceValues = [...DIE_SHAPES[shapeId].baseValues];
+        
+        // Re-render face value controls
+        const faceGrid = modal.querySelector('.face-grid');
+        if (faceGrid) {
+          faceGrid.innerHTML = die.faceValues.map((val, i) => `
+            <div class="face-edit-group">
+              <button class="face-dec" data-face="${i}">−</button>
+              <span class="face-val" data-face="${i}">${val}</span>
+              <button class="face-inc" data-face="${i}">+</button>
+            </div>
+          `).join('');
+          
+          // Rebind face events
+          this.bindFaceEvents(modal, die, updateCostDisplay);
+        }
+        
         updateCostDisplay();
       });
     });
     
     // Color selection
-    modal.querySelectorAll('.color-btn').forEach(btn => {
+    modal.querySelectorAll('.color-btn-large').forEach(btn => {
       btn.addEventListener('click', () => {
-        modal.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+        const colorId = btn.dataset.color;
+        modal.querySelectorAll('.color-btn-large').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        die.faceColors[this.selectedFace] = btn.dataset.color;
-        modal.querySelector(`.face-btn[data-face="${this.selectedFace}"]`).style.background = btn.dataset.color;
-        this.updateUpgradePreview(modal, die);
+        pendingChanges.colorChange = colorId;
+        die.color = colorId;
+        
+        // Update preview
+        const previewDie = modal.querySelector('.preview-die-large');
+        if (previewDie) {
+          const colorHex = DIE_COLORS[colorId]?.hex || '#e8e4dc';
+          previewDie.style.background = colorHex;
+          previewDie.style.borderColor = colorHex;
+        }
+        
         updateCostDisplay();
       });
     });
     
-    // Pip color selection
-    modal.querySelectorAll('.pip-color-btn').forEach(btn => {
+    // Modifier selection
+    modal.querySelectorAll('.modifier-btn:not(.applied)').forEach(btn => {
       btn.addEventListener('click', () => {
-        modal.querySelectorAll('.pip-color-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        die.pipColor = btn.dataset.color;
-        modal.querySelectorAll('.face-btn').forEach(fb => fb.style.color = btn.dataset.color);
-        this.updateUpgradePreview(modal, die);
+        const modId = btn.dataset.modifier;
+        if (!pendingChanges.newModifiers.includes(modId)) {
+          pendingChanges.newModifiers.push(modId);
+          btn.classList.add('pending');
+          btn.querySelector('.mod-cost').textContent = '✓';
+        } else {
+          pendingChanges.newModifiers = pendingChanges.newModifiers.filter(m => m !== modId);
+          btn.classList.remove('pending');
+          btn.querySelector('.mod-cost').textContent = DIE_MODIFIERS[modId]?.unlockCost || 0;
+        }
         updateCostDisplay();
       });
     });
     
     // Apply changes
-    modal.querySelector('#apply-upgrade').addEventListener('click', () => {
+    modal.querySelector('#apply-upgrade')?.addEventListener('click', () => {
       if (this.pendingUpgradeCost > 0 && this.game) {
         // Deduct research
         this.game.research -= this.pendingUpgradeCost;
+        
+        // Apply modifiers
+        pendingChanges.newModifiers.forEach(modId => {
+          if (!die.modifiers) die.modifiers = [];
+          if (!die.modifiers.includes(modId)) {
+            die.modifiers.push(modId);
+          }
+        });
+        
+        // Update face colors based on die color
+        const colorHex = DIE_COLORS[die.color]?.hex || '#e8e4dc';
+        die.faceColors = Array(die.faceValues.length).fill(colorHex);
         
         // Log the upgrade
         if (this.game.logEvent) {
@@ -652,6 +893,9 @@ export class DiceUI {
         
         // Show notification
         this.showUpgradeNotification(die, this.pendingUpgradeCost);
+        
+        // Check for new milestone unlocks
+        this.checkMilestones();
       }
       
       this.syncDiceTo3D();
@@ -662,15 +906,36 @@ export class DiceUI {
     // Click outside to close (restore values)
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        die.faceValues = [...originalValues];
-        die.faceColors = [...originalColors];
-        die.pipColor = originalPipColor;
+        restoreOriginal();
         this.closeUpgradeModal();
       }
     });
     
     // Initial cost display
     updateCostDisplay();
+  }
+
+  bindFaceEvents(modal, die, updateCostDisplay) {
+    modal.querySelectorAll('.face-inc').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const faceIndex = parseInt(btn.dataset.face);
+        const maxValue = DIE_SHAPES[die.shape]?.sides || 6;
+        const newValue = Math.min(maxValue + 3, die.faceValues[faceIndex] + 1);
+        die.faceValues[faceIndex] = newValue;
+        modal.querySelector(`.face-val[data-face="${faceIndex}"]`).textContent = newValue;
+        updateCostDisplay();
+      });
+    });
+    
+    modal.querySelectorAll('.face-dec').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const faceIndex = parseInt(btn.dataset.face);
+        const newValue = Math.max(0, die.faceValues[faceIndex] - 1);
+        die.faceValues[faceIndex] = newValue;
+        modal.querySelector(`.face-val[data-face="${faceIndex}"]`).textContent = newValue;
+        updateCostDisplay();
+      });
+    });
   }
 
   showUpgradeNotification(die, cost) {
