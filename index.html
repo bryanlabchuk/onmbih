@@ -433,11 +433,13 @@
     import { DiceUI } from './js/core/diceUI.js';
     import { MapUI } from './js/core/mapUI.js';
     import { ChallengeUI } from './js/core/challengeUI.js';
+    import { visualEffects } from './js/core/visualEffects.js';
     
     // Make game globally accessible for debugging
     window.game = game;
     window.ui = ui;
     window.audio = audio;
+    window.visualEffects = visualEffects;
     
     // Dice UI system
     let diceUI = null;
@@ -469,19 +471,19 @@
             diceInitialized = true;
             console.log('3D Dice initialized successfully');
             
-            // Do initial roll to set starting positions
+            // Keep dice docked initially - they'll roll when player starts a challenge
             setTimeout(() => {
               if (diceUI.dice3d && diceUI.dice3d.dice.length > 0) {
-                // Just drop the dice gently to the tray
-                diceUI.dice3d.dice.forEach(die => {
-                  die.body.position.y = 3;
-                  die.body.velocity.set(0, -5, 0);
-                  die.body.angularVelocity.set(
-                    (Math.random() - 0.5) * 5,
-                    (Math.random() - 0.5) * 5,
-                    (Math.random() - 0.5) * 5
-                  );
-                });
+                // Ensure all dice are properly docked
+                diceUI.dice3d.dockAllDice();
+                
+                // Add docked class to container
+                const diceContainer = document.getElementById('dice-3d-container');
+                if (diceContainer) {
+                  diceContainer.classList.add('dice-docked');
+                }
+                
+                console.log('Dice docked and ready');
               }
             }, 100);
             
@@ -543,9 +545,30 @@
           locationIndicator.innerHTML = `📍 ${location.icon} ${location.name}`;
         }
         
+        // Dock all dice when changing locations
+        if (diceUI && diceUI.dice3d) {
+          diceUI.dice3d.dockAllDice();
+          
+          // Add docked class to container
+          const diceContainer = document.getElementById('dice-3d-container');
+          if (diceContainer) {
+            diceContainer.classList.add('dice-docked');
+            diceContainer.classList.remove('dice-rolling');
+          }
+        }
+        
+        // Reset rolls for new location
+        game.rollsRemaining = game.maxRolls;
+        game.rollsUsedThisChallenge = 0;
+        const rollsEl = document.getElementById('rolls-remaining');
+        if (rollsEl) rollsEl.textContent = game.rollsRemaining;
+        
         // Update environment display
         challengeUI.updateEnvironmentDisplay(location.id);
         challengeUI.updateLevelDisplay();
+        
+        // Animate dice tray entrance
+        visualEffects.animateDiceEntrance();
         
         // Apply location bonuses to game modifiers
         if (location.researchBonus) {
@@ -594,6 +617,13 @@
               challengeUI.incrementRollCount();
             }
             
+            // Update container state
+            const diceContainer = document.getElementById('dice-3d-container');
+            if (diceContainer) {
+              diceContainer.classList.remove('dice-docked');
+              diceContainer.classList.add('dice-rolling');
+            }
+            
             diceUI.rollAll();
             document.getElementById('rolls-remaining').textContent = game.rollsRemaining;
             
@@ -605,7 +635,9 @@
             // Mark dice as rolling in the display
             document.querySelectorAll('.die-value-chip').forEach(chip => {
               chip.classList.add('rolling');
-              chip.textContent = '?';
+              chip.classList.remove('docked');
+              const valueEl = chip.querySelector('.die-value');
+              if (valueEl) valueEl.textContent = '?';
             });
           } else {
             // Flash the rolls count to indicate no rolls left
@@ -667,7 +699,7 @@
         }
         
         // Listen for roll complete events
-        window.addEventListener('diceRollComplete', (e) => {
+        window.addEventListener('diceRollComplete', async (e) => {
           const results = e.detail;
           console.log('Dice roll complete:', results);
           
@@ -678,6 +710,34 @@
               game.dice[index].locked = result.locked;
             }
           });
+          
+          // Update dice values display first
+          if (diceUI) {
+            diceUI.updateDiceValuesDisplay();
+          }
+          
+          // Remove rolling animation
+          document.querySelectorAll('.die-value-chip').forEach(chip => {
+            chip.classList.remove('rolling');
+          });
+          
+          // Get score result for visual effects
+          const scoreResult = diceUI ? diceUI.calculateScore() : null;
+          
+          // Play Balatro-style score sequence
+          if (scoreResult && scoreResult.bonuses.length > 0) {
+            await visualEffects.playScoreSequence(
+              results,
+              scoreResult.bonuses,
+              scoreResult.finalScore,
+              false // Will be determined by challenge check
+            );
+          } else {
+            // Still animate dice chips even without bonuses
+            document.querySelectorAll('.die-value-chip').forEach((chip, index) => {
+              visualEffects.animateDieChip(chip, index * 80);
+            });
+          }
           
           // Check challenge conditions
           if (challengeUI && challengeUI.currentChallenge) {
@@ -690,10 +750,35 @@
             
             const conditionResult = challengeUI.checkConditions(diceForCheck);
             
+            // Animate condition checkmarks
+            document.querySelectorAll('.condition-item').forEach((item, index) => {
+              if (conditionResult.conditions[index]?.passed) {
+                setTimeout(() => visualEffects.animateConditionMet(item), index * 200);
+              }
+            });
+            
             // If all conditions met and no rolls left, complete challenge
             if (game.rollsRemaining <= 0 || conditionResult.success) {
-              setTimeout(() => {
+              setTimeout(async () => {
+                // Success effects
+                if (conditionResult.success) {
+                  visualEffects.showComboText('SUCCESS!', '#4a9b6a');
+                  visualEffects.screenShake('big');
+                  visualEffects.flashChallengeSuccess();
+                }
+                
                 const reward = challengeUI.completeChallenge(conditionResult.success);
+                
+                // Animate research gain
+                if (reward.research > 0) {
+                  const diceContainer = document.getElementById('dice-3d-container');
+                  const rect = diceContainer?.getBoundingClientRect() || { left: 400, top: 300 };
+                  visualEffects.animateResearchGain(
+                    reward.research,
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2
+                  );
+                }
                 
                 // Update stats display
                 document.getElementById('research-value').textContent = game.research;
@@ -703,22 +788,18 @@
             }
           }
           
+          // Remove rolling state from container
+          const diceContainer = document.getElementById('dice-3d-container');
+          if (diceContainer) {
+            diceContainer.classList.remove('dice-rolling');
+          }
+          
           // Re-enable roll button
           const btn = document.getElementById('roll-all-3d');
           if (btn) {
             btn.disabled = game.rollsRemaining <= 0;
             btn.textContent = game.rollsRemaining > 0 ? '🎲 Roll All' : 'No Rolls Left';
           }
-          
-          // Update dice values display
-          if (diceUI) {
-            diceUI.updateDiceValuesDisplay();
-          }
-          
-          // Remove rolling animation
-          document.querySelectorAll('.die-value-chip').forEach(chip => {
-            chip.classList.remove('rolling');
-          });
           
           // Update mini inventory
           const miniInv = document.getElementById('dice-inventory-mini');

@@ -303,18 +303,22 @@ export class DiceUI {
       }));
     }
     
+    // Check if dice are docked (haven't been rolled yet)
+    const areDocked = this.dice3d && this.dice3d.diceAreDocked;
+    
     // Render dice chips with shape and color info
     container.innerHTML = values.map((d, i) => {
-      const value = d.value !== null && d.value !== undefined ? d.value : '?';
+      const value = d.value !== null && d.value !== undefined ? d.value : (areDocked ? '•' : '?');
       const shapeIcon = DIE_SHAPES[d.shape]?.icon || '🎲';
       const colorHex = DIE_COLORS[d.color]?.hex || '#e8e4dc';
       const invDie = this.inventory.equippedDice[i];
+      const isDocked = areDocked || (d.value === null || d.value === undefined);
       
       return `
-        <div class="die-value-chip ${d.locked ? 'locked' : ''}" 
+        <div class="die-value-chip ${d.locked ? 'locked' : ''} ${isDocked ? 'docked' : ''}" 
              data-index="${i}"
              style="border-color: ${colorHex};"
-             title="${invDie?.name || 'Die'} (${DIE_SHAPES[d.shape]?.name || 'D6'})${d.locked ? ' [Locked]' : ''}">
+             title="${invDie?.name || 'Die'} (${DIE_SHAPES[d.shape]?.name || 'D6'})${d.locked ? ' [Locked]' : ''}${isDocked ? ' - Ready to roll!' : ''}">
           <span class="die-shape-icon">${shapeIcon}</span>
           <span class="die-value">${value}</span>
         </div>

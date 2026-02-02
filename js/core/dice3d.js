@@ -32,6 +32,14 @@ export class Dice3DSystem {
     this.animationId = null;
     this.initialized = false;
     
+    // Docking system - dice start hidden/docked
+    this.diceAreDocked = true;
+    this.dockPositions = [];
+    
+    // Visual effects
+    this.particles = [];
+    this.scorePopups = [];
+    
     // Don't init in constructor - wait for explicit call
   }
 
@@ -284,12 +292,48 @@ export class Dice3DSystem {
     this.scene.add(mesh);
     this.world.addBody(body);
     
-    const dieObject = { id, mesh, body, config, faceValues: [...faceValues], locked, size };
+    const dieObject = { id, mesh, body, config, faceValues: [...faceValues], locked, size, isDocked: true };
     this.dice.push(dieObject);
     
-    console.log('Die created, total dice:', this.dice.length);
+    // Calculate dock position for this die
+    const dieIndex = this.dice.length - 1;
+    const dockX = -8 + (dieIndex * 1.8); // Line them up on the left side, outside view
+    const dockY = 1;
+    const dockZ = 7; // Behind the tray
+    
+    this.dockPositions.push({ x: dockX, y: dockY, z: dockZ });
+    
+    // Move to dock position
+    this.dockDie(dieObject, dieIndex);
+    
+    console.log('Die created and docked, total dice:', this.dice.length);
     
     return dieObject;
+  }
+
+  // Dock a single die to its waiting position
+  dockDie(die, index) {
+    const dockPos = this.dockPositions[index] || { x: -8 + (index * 1.8), y: 1, z: 7 };
+    
+    // Set physics body position (off-screen)
+    die.body.position.set(dockPos.x, dockPos.y, dockPos.z);
+    die.body.velocity.set(0, 0, 0);
+    die.body.angularVelocity.set(0, 0, 0);
+    die.body.sleep();
+    
+    // Set mesh position
+    die.mesh.position.set(dockPos.x, dockPos.y, dockPos.z);
+    die.mesh.rotation.set(0, 0, 0);
+    
+    die.isDocked = true;
+  }
+
+  // Dock all dice (call when entering a new location)
+  dockAllDice() {
+    this.diceAreDocked = true;
+    this.dice.forEach((die, index) => {
+      this.dockDie(die, index);
+    });
   }
 
   createRoundedBoxGeometry(width, height, depth, radius, segments) {
@@ -428,10 +472,21 @@ export class Dice3DSystem {
     
     console.log('Rolling die:', dieId);
     
-    // Reset position above tray with random offset (keep within bounds)
-    const startX = (Math.random() - 0.5) * 4; // Reduced spread
-    const startZ = (Math.random() - 0.5) * 3;
-    die.body.position.set(startX, 6 + Math.random() * 2, startZ); // Lower start height
+    // Undock animation - die flies from dock position into the tray
+    die.isDocked = false;
+    this.diceAreDocked = false;
+    
+    // Calculate launch position - start above center
+    const targetX = (Math.random() - 0.5) * 3;
+    const targetZ = (Math.random() - 0.5) * 2;
+    
+    // Set starting position (above and to the side for dramatic entry)
+    const dieIndex = this.dice.findIndex(d => d.id === dieId);
+    const entryX = -6 + (Math.random() * 2);
+    const entryY = 8;
+    const entryZ = -3 + (Math.random() * 2);
+    
+    die.body.position.set(entryX, entryY, entryZ);
     die.body.velocity.set(0, 0, 0);
     die.body.angularVelocity.set(0, 0, 0);
     
@@ -442,23 +497,26 @@ export class Dice3DSystem {
       Math.random() * Math.PI * 2
     );
     
-    // Apply throw force - mostly downward with gentle horizontal
+    // Apply throw force - arc towards center
     const throwForce = new CANNON.Vec3(
-      (Math.random() - 0.5) * 6,  // Reduced horizontal force
-      -15 - Math.random() * 5,    // Reduced downward force
-      (Math.random() - 0.5) * 6
+      (targetX - entryX) * 3 + (Math.random() - 0.5) * 4,
+      -12 - Math.random() * 5,
+      (targetZ - entryZ) * 3 + (Math.random() - 0.5) * 4
     );
     die.body.applyImpulse(throwForce, new CANNON.Vec3(0, 0, 0));
     
-    // Apply spin (reduced)
+    // Apply dramatic spin
     const spin = new CANNON.Vec3(
-      (Math.random() - 0.5) * 20,  // Reduced spin
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 20
+      (Math.random() - 0.5) * 25,
+      (Math.random() - 0.5) * 25,
+      (Math.random() - 0.5) * 25
     );
     die.body.angularVelocity.set(spin.x, spin.y, spin.z);
     
     die.body.wakeUp();
+    
+    // Add launch particle effect
+    this.createLaunchParticles(entryX, entryY, entryZ);
   }
 
   // Reset a die that has escaped bounds
@@ -477,6 +535,148 @@ export class Dice3DSystem {
   isDieOutOfBounds(die) {
     const pos = die.body.position;
     return Math.abs(pos.x) > 10 || pos.y < -5 || pos.y > 20 || Math.abs(pos.z) > 8;
+  }
+
+  // ===== VISUAL EFFECTS =====
+  
+  // Create particle burst when die is launched
+  createLaunchParticles(x, y, z) {
+    const particleCount = 8;
+    const colors = [0x6aa3c7, 0xc9944a, 0x4a9b6a, 0xffffff];
+    
+    for (let i = 0; i < particleCount; i++) {
+      const geometry = new THREE.SphereGeometry(0.08, 8, 8);
+      const material = new THREE.MeshBasicMaterial({
+        color: colors[Math.floor(Math.random() * colors.length)],
+        transparent: true,
+        opacity: 1
+      });
+      const particle = new THREE.Mesh(geometry, material);
+      particle.position.set(x, y, z);
+      
+      // Random velocity
+      particle.userData.velocity = {
+        x: (Math.random() - 0.5) * 0.3,
+        y: (Math.random() - 0.5) * 0.3,
+        z: (Math.random() - 0.5) * 0.3
+      };
+      particle.userData.life = 1;
+      particle.userData.decay = 0.02 + Math.random() * 0.02;
+      
+      this.scene.add(particle);
+      this.particles.push(particle);
+    }
+  }
+  
+  // Create score popup effect
+  createScorePopup(value, x, y, z, isBonus = false) {
+    // This will be handled via CSS/DOM for better text rendering
+    const popup = {
+      value,
+      worldX: x,
+      worldY: y,
+      worldZ: z,
+      life: 1,
+      isBonus
+    };
+    this.scorePopups.push(popup);
+    
+    // Dispatch event for UI to handle
+    window.dispatchEvent(new CustomEvent('diceScorePopup', { 
+      detail: popup 
+    }));
+  }
+  
+  // Create glow effect on a die
+  addDieGlow(die, color = 0x6aa3c7, intensity = 1) {
+    // Remove existing glow
+    this.removeDieGlow(die);
+    
+    // Create glow mesh (slightly larger, transparent)
+    const glowGeometry = new THREE.BoxGeometry(
+      die.size * 1.3,
+      die.size * 1.3,
+      die.size * 1.3
+    );
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.3 * intensity,
+      side: THREE.BackSide
+    });
+    const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+    glowMesh.userData.isDieGlow = true;
+    glowMesh.userData.parentDie = die.id;
+    
+    die.mesh.add(glowMesh);
+    die.glowMesh = glowMesh;
+  }
+  
+  removeDieGlow(die) {
+    if (die.glowMesh) {
+      die.mesh.remove(die.glowMesh);
+      die.glowMesh.geometry.dispose();
+      die.glowMesh.material.dispose();
+      die.glowMesh = null;
+    }
+  }
+  
+  // Pulse glow effect
+  pulseDieGlow(die, color = 0x4a9b6a) {
+    this.addDieGlow(die, color, 0.5);
+    
+    // Animate the pulse
+    let intensity = 0.5;
+    let increasing = true;
+    const pulseInterval = setInterval(() => {
+      if (!die.glowMesh) {
+        clearInterval(pulseInterval);
+        return;
+      }
+      
+      if (increasing) {
+        intensity += 0.05;
+        if (intensity >= 1) increasing = false;
+      } else {
+        intensity -= 0.05;
+        if (intensity <= 0.3) increasing = true;
+      }
+      
+      die.glowMesh.material.opacity = 0.3 * intensity;
+    }, 50);
+    
+    // Stop after 2 seconds
+    setTimeout(() => {
+      clearInterval(pulseInterval);
+      this.removeDieGlow(die);
+    }, 2000);
+  }
+  
+  // Update particles in animation loop
+  updateParticles() {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const particle = this.particles[i];
+      
+      // Move particle
+      particle.position.x += particle.userData.velocity.x;
+      particle.position.y += particle.userData.velocity.y;
+      particle.position.z += particle.userData.velocity.z;
+      
+      // Apply gravity
+      particle.userData.velocity.y -= 0.01;
+      
+      // Decay
+      particle.userData.life -= particle.userData.decay;
+      particle.material.opacity = particle.userData.life;
+      
+      // Remove dead particles
+      if (particle.userData.life <= 0) {
+        this.scene.remove(particle);
+        particle.geometry.dispose();
+        particle.material.dispose();
+        this.particles.splice(i, 1);
+      }
+    }
   }
 
   rollAll() {
@@ -711,11 +911,16 @@ export class Dice3DSystem {
     // Update physics
     this.world.step(1 / 60);
     
-    // Sync meshes with physics bodies
+    // Sync meshes with physics bodies (only for non-docked dice)
     this.dice.forEach(die => {
-      die.mesh.position.copy(die.body.position);
-      die.mesh.quaternion.copy(die.body.quaternion);
+      if (!die.isDocked) {
+        die.mesh.position.copy(die.body.position);
+        die.mesh.quaternion.copy(die.body.quaternion);
+      }
     });
+    
+    // Update visual effects
+    this.updateParticles();
     
     this.renderer.render(this.scene, this.camera);
   }
