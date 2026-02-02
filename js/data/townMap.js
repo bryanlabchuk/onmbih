@@ -224,7 +224,12 @@ export class MapGenerator {
       const nodeType = def.type || 'research';
       const theme = def.theme || 'school';
       const themeData = LOCATION_THEMES[theme] || LOCATION_THEMES.school;
-      const typeData = NODE_TYPES[nodeType];
+      const typeData = NODE_TYPES[nodeType] || {};
+
+      // Use explicit def.name so display never shows wrong location (e.g. from theme lookup)
+      const locationName = def.name != null ? def.name : (themeData.name || theme);
+      const locationIcon = themeData.icon || '📍';
+      const atmosphere = themeData.atmosphere || 'normal';
 
       const node = {
         id: `node_${tierIndex}_${i}`,
@@ -232,10 +237,14 @@ export class MapGenerator {
         index: i,
         type: nodeType,
         theme: theme,
+        locationName,
+        locationIcon,
+        atmosphere,
         ...typeData,
-        locationName: def.name || themeData.name || theme,
-        locationIcon: themeData.icon || '📍',
-        atmosphere: themeData.atmosphere || 'normal',
+        // Override again so typeData spread cannot overwrite our display fields
+        locationName,
+        locationIcon,
+        atmosphere,
         difficulty: config.difficulty,
         connections: { in: [], out: [] },
         completed: false,
