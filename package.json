@@ -2,18 +2,29 @@
   "name": "onmbih",
   "version": "1.0.0",
   "description": "A roguelike card & dice game with dark New England horror humor, inspired by Balatro and Stephen King.",
-  "main": "index.js",
+  "main": "index.html",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bryanlabchuk/onmbih.git"
   },
-  "keywords": [],
+  "keywords": [
+    "game",
+    "roguelike",
+    "dice",
+    "horror"
+  ],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
   "bugs": {
     "url": "https://github.com/bryanlabchuk/onmbih/issues"
   },
