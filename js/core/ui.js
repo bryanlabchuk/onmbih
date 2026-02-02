@@ -241,17 +241,39 @@ class UIRenderer {
     // Check if player can recruit more
     const canRecruit = (game.allies?.length || 0) < (game.maxAllies || 3);
     
+    // Helper function to show continue button after selection
+    const showContinueFlow = () => {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+          <h3 style="color: var(--ghost-glow);">✓ Decision Made</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 20px;">Click Continue in the action bar to proceed.</p>
+        </div>
+      `;
+      
+      // Show the continue button in UI bar
+      setTimeout(() => {
+        window.uiBar?.logEvent('Click Continue to choose next destination', 'info');
+        window.uiBar?.showContinueButton(() => {
+          if (onComplete) onComplete();
+        });
+      }, 300);
+    };
+    
     if (!canRecruit) {
       container.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
           <h3 style="color: var(--candle-orange);">Party Full!</h3>
           <p style="color: var(--text-secondary);">You cannot recruit more allies at your current level.</p>
-          <button class="btn btn-primary" id="recruitment-continue">Continue</button>
         </div>
       `;
-      document.getElementById('recruitment-continue')?.addEventListener('click', () => {
-        if (onComplete) onComplete();
-      });
+      
+      // Show continue button after a moment
+      setTimeout(() => {
+        window.uiBar?.logEvent('Party is full - click Continue', 'info');
+        window.uiBar?.showContinueButton(() => {
+          if (onComplete) onComplete();
+        });
+      }, 1000);
       return;
     }
     
@@ -265,7 +287,8 @@ class UIRenderer {
           audio.playSuccess();
           // Log the recruitment
           window.uiBar?.logEvent(`Recruited ${ally.name}!`, 'success');
-          if (onComplete) onComplete();
+          // Show continue flow
+          showContinueFlow();
         }
       });
       container.appendChild(card);
@@ -281,7 +304,8 @@ class UIRenderer {
     
     document.getElementById('recruitment-skip')?.addEventListener('click', () => {
       audio.playClick();
-      if (onComplete) onComplete();
+      window.uiBar?.logEvent('Skipped recruitment', 'info');
+      showContinueFlow();
     });
   }
 

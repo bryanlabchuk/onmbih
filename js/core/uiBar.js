@@ -87,6 +87,9 @@ export class UIBar {
         this.logEvent('Skipped current challenge', 'warning');
         this.challengeUI.completeChallenge(false);
         
+        // Clear quest display
+        this.clearQuestDisplay();
+        
         // Reset game rolls
         if (this.game) {
           this.game.rollsRemaining = this.game.maxRolls || 3;
@@ -95,15 +98,26 @@ export class UIBar {
         
         // Update UI
         this.updateRollButton(false, this.game?.rollsRemaining || 3);
-        this.updateQuestPreview();
         
-        // Show new challenge selection
+        // Show continue button to go to map
         setTimeout(() => {
-          this.challengeUI.showAvailableChallenges();
+          this.logEvent('Click Continue to choose next destination', 'info');
+          this.showContinueButton(() => {
+            // Complete the current node and show map
+            if (this.game.currentNode && window.progressionMap) {
+              window.progressionMap.completeNode(this.game.currentNode.id);
+              window.progressionMap.show();
+            }
+          });
         }, 500);
       } else {
         this.logEvent('No active challenge to skip', 'warning');
       }
+    });
+
+    // Listen for challenge clear events
+    window.addEventListener('challengeCleared', () => {
+      this.clearQuestDisplay();
     });
   }
 
@@ -218,7 +232,7 @@ export class UIBar {
     const pipsEl = document.getElementById('quest-pips');
     
     if (!this.challengeUI || !this.challengeUI.currentChallenge) {
-      if (nameEl) nameEl.textContent = 'No active challenge';
+      if (nameEl) nameEl.textContent = 'Select a destination';
       if (pipsEl) pipsEl.innerHTML = '';
       return;
     }
@@ -241,6 +255,28 @@ export class UIBar {
         return `<span class="quest-condition-pip ${statusClass}" title="${cond.description || ''}"></span>`;
       }).join('');
     }
+  }
+
+  // Clear all challenge/quest display when entering a new location
+  clearQuestDisplay() {
+    const nameEl = document.querySelector('#quest-preview .quest-preview-name');
+    const pipsEl = document.getElementById('quest-pips');
+    
+    if (nameEl) nameEl.textContent = 'Select a destination';
+    if (pipsEl) pipsEl.innerHTML = '';
+    
+    // Clear expanded view too
+    const tierBadge = document.getElementById('quest-tier-badge');
+    const detailName = document.getElementById('quest-detail-name');
+    const detailType = document.getElementById('quest-detail-type');
+    const conditionsList = document.getElementById('quest-conditions-list');
+    const rewardSection = document.getElementById('quest-reward-section');
+    
+    if (tierBadge) tierBadge.textContent = '';
+    if (detailName) detailName.textContent = 'No Active Challenge';
+    if (detailType) detailType.textContent = 'Choose a destination from the map';
+    if (conditionsList) conditionsList.innerHTML = '';
+    if (rewardSection) rewardSection.style.display = 'none';
   }
 
   updateQuestExpanded() {
@@ -408,6 +444,78 @@ export class UIBar {
     } else if (this.expandedPanel?.id === 'quest-panel') {
       this.updateQuestExpanded();
     }
+  }
+
+  // Reset UI when entering a new location
+  resetForNewLocation(locationName) {
+    // Clear any expanded panel
+    if (this.expandedPanel) {
+      this.collapsePanel(this.expandedPanel);
+    }
+    
+    // Clear quest display
+    this.clearQuestDisplay();
+    
+    // Update dice preview to show docked state
+    this.updateDicePreview();
+    
+    // Update location name
+    const locationEl = document.getElementById('current-location-name');
+    if (locationEl) {
+      locationEl.textContent = locationName || 'Unknown';
+    }
+    
+    // Reset roll button
+    this.updateRollButton(false, this.game?.rollsRemaining || 3);
+    
+    // Update status
+    this.updateStatus();
+  }
+
+  // Show a "Continue" button in the UI bar actions area
+  showContinueButton(onContinue) {
+    const actionsArea = document.querySelector('.ui-actions');
+    if (!actionsArea) return;
+    
+    // Hide other action buttons temporarily
+    const skipBtn = document.getElementById('skip-challenge-btn');
+    const rollBtn = document.getElementById('roll-all-3d');
+    if (skipBtn) skipBtn.style.display = 'none';
+    if (rollBtn) rollBtn.style.display = 'none';
+    
+    // Create continue button
+    let continueBtn = document.getElementById('continue-btn-action');
+    if (!continueBtn) {
+      continueBtn = document.createElement('button');
+      continueBtn.id = 'continue-btn-action';
+      continueBtn.className = 'btn btn-primary action-btn';
+      continueBtn.innerHTML = '<span class="btn-icon">🗺️</span><span>Continue</span>';
+      actionsArea.appendChild(continueBtn);
+    }
+    
+    continueBtn.style.display = 'flex';
+    continueBtn.onclick = () => {
+      // Hide continue button
+      continueBtn.style.display = 'none';
+      
+      // Show other buttons
+      if (skipBtn) skipBtn.style.display = '';
+      if (rollBtn) rollBtn.style.display = '';
+      
+      // Call callback
+      if (onContinue) onContinue();
+    };
+  }
+
+  // Hide the continue button and restore normal buttons
+  hideContinueButton() {
+    const continueBtn = document.getElementById('continue-btn-action');
+    const skipBtn = document.getElementById('skip-challenge-btn');
+    const rollBtn = document.getElementById('roll-all-3d');
+    
+    if (continueBtn) continueBtn.style.display = 'none';
+    if (skipBtn) skipBtn.style.display = '';
+    if (rollBtn) rollBtn.style.display = '';
   }
 }
 

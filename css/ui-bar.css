@@ -505,6 +505,28 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-transform: uppercase;
+}
+
+/* Continue button - stands out when active */
+#continue-btn-action {
+  background: linear-gradient(180deg, var(--spirit-green) 0%, #2d6840 100%);
+  border-color: var(--spirit-green);
+  color: white;
+  animation: continue-pulse 1.5s ease-in-out infinite;
+}
+
+#continue-btn-action:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(74, 155, 106, 0.5);
+}
+
+@keyframes continue-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(74, 155, 106, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(74, 155, 106, 0.6);
+  }
   letter-spacing: 0.5px;
 }
 

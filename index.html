@@ -842,6 +842,12 @@
       progressionMap.onNodeSelect = (node) => {
         console.log('Entering node:', node.locationName, node.type);
         
+        // ===== CLEAR PREVIOUS STATE =====
+        // Clear any active challenge from previous location
+        if (challengeUI) {
+          challengeUI.clearChallenge();
+        }
+        
         // Store current node in game state
         game.currentNode = node;
         game.currentLocation = {
@@ -853,6 +859,7 @@
         };
         game.logEvent('travel', `Entered ${node.locationName}`);
         
+        // ===== UPDATE UI FOR NEW LOCATION =====
         // Update location name in status bar
         const locationName = document.getElementById('current-location-name');
         if (locationName) {
@@ -864,6 +871,12 @@
         const phaseDesc = document.getElementById('phase-description');
         if (phaseName) phaseName.textContent = node.locationName;
         if (phaseDesc) phaseDesc.textContent = NODE_TYPES[node.type]?.description || '';
+        
+        // Reset UI bar for new location
+        if (window.uiBar) {
+          window.uiBar.resetForNewLocation(node.locationName);
+          window.uiBar.hideContinueButton();
+        }
         
         // Dock all dice when changing locations
         if (diceUI && diceUI.dice3d) {
@@ -884,7 +897,7 @@
         game.rollsRemaining = difficulty.rollCount;
         game.rollsUsedThisChallenge = 0;
         
-        // Update UI bar
+        // Update UI bar roll button
         if (window.uiBar) {
           window.uiBar.updateRollButton(false, game.rollsRemaining);
           window.uiBar.logEvent(`Entered ${node.locationName}`, 'info');
@@ -901,12 +914,21 @@
       function handleNodeType(node, difficulty) {
         const diceArea = document.getElementById('dice-area');
         const cardGrid = document.getElementById('card-grid');
+        const rollBtn = document.getElementById('roll-all-3d');
+        const skipBtn = document.getElementById('skip-challenge-btn');
+        
+        // Helper to show/hide dice action buttons
+        const showDiceButtons = (show) => {
+          if (rollBtn) rollBtn.style.display = show ? '' : 'none';
+          if (skipBtn) skipBtn.style.display = show ? '' : 'none';
+        };
         
         switch (node.type) {
           case 'start':
             // Home / starting point - auto-complete and show map for next choice
             diceArea.style.display = 'block';
             cardGrid.style.display = 'none';
+            showDiceButtons(false);
             game.transitionTo('town');
             
             // Brief pause then complete and show map with next options
@@ -923,9 +945,10 @@
             
           case 'research':
           case 'elite':
-            // Research challenge
+            // Research challenge - show dice buttons
             diceArea.style.display = 'block';
             cardGrid.style.display = 'none';
+            showDiceButtons(true);
             game.transitionTo('research');
             // Show challenge selection with appropriate tier
             setTimeout(() => {
@@ -934,9 +957,10 @@
             break;
             
           case 'recruit':
-            // Recruitment event
+            // Recruitment event - hide dice buttons
             diceArea.style.display = 'none';
             cardGrid.style.display = 'grid';
+            showDiceButtons(false);
             game.transitionTo('town');
             ui.renderRecruitmentOptions(cardGrid, () => {
               progressionMap.completeNode(node.id);
@@ -945,31 +969,35 @@
             break;
             
           case 'rest':
-            // Rest and heal
+            // Rest and heal - hide dice buttons
             diceArea.style.display = 'none';
             cardGrid.style.display = 'none';
+            showDiceButtons(false);
             handleRestNode(node);
             break;
             
           case 'store':
-            // Shopping
+            // Shopping - hide dice buttons
             diceArea.style.display = 'none';
             cardGrid.style.display = 'none';
+            showDiceButtons(false);
             handleStoreNode(node);
             break;
             
           case 'mystery':
-            // Random event
+            // Random event - may need dice buttons depending on outcome
             diceArea.style.display = 'block';
             cardGrid.style.display = 'none';
+            showDiceButtons(false); // Will show if a challenge is triggered
             handleMysteryNode(node, difficulty);
             break;
             
           case 'spirit':
           case 'boss':
-            // Spirit challenge
+            // Spirit challenge - show dice buttons
             diceArea.style.display = 'block';
             cardGrid.style.display = 'none';
+            showDiceButtons(true);
             game.transitionTo('spirit');
             setTimeout(() => {
               challengeUI.showAvailableChallenges(difficulty.challengeTier);
@@ -991,11 +1019,14 @@
         visualEffects.showComboText(`+${sanityGain} Sanity!`, '#6a8fc7');
         window.uiBar?.logEvent(`Rested and restored ${sanityGain} sanity`, 'success');
         
-        // Complete node after short delay
+        // Show Continue button
         setTimeout(() => {
-          progressionMap.completeNode(node.id);
-          progressionMap.show();
-        }, 1500);
+          window.uiBar?.logEvent('Click Continue when ready', 'info');
+          window.uiBar?.showContinueButton(() => {
+            progressionMap.completeNode(node.id);
+            progressionMap.show();
+          });
+        }, 1000);
       }
       
       // Handle store node
@@ -1025,17 +1056,23 @@
           diceUI.renderInventoryPanel(document.getElementById('dice-inventory-content'));
         }
         
-        // Close handlers
+        // Close handlers - show continue button after leaving store
         document.getElementById('close-store-modal')?.addEventListener('click', () => {
           modal.style.display = 'none';
-          progressionMap.completeNode(node.id);
-          progressionMap.show();
+          window.uiBar?.logEvent('Click Continue when ready', 'info');
+          window.uiBar?.showContinueButton(() => {
+            progressionMap.completeNode(node.id);
+            progressionMap.show();
+          });
         });
         
         document.getElementById('leave-store')?.addEventListener('click', () => {
           modal.style.display = 'none';
-          progressionMap.completeNode(node.id);
-          progressionMap.show();
+          window.uiBar?.logEvent('Click Continue when ready', 'info');
+          window.uiBar?.showContinueButton(() => {
+            progressionMap.completeNode(node.id);
+            progressionMap.show();
+          });
         });
       }
       
@@ -1044,12 +1081,18 @@
         const events = ['research', 'rest', 'elite', 'trap'];
         const randomEvent = events[Math.floor(Math.random() * events.length)];
         
+        const rollBtn = document.getElementById('roll-all-3d');
+        const skipBtn = document.getElementById('skip-challenge-btn');
+        
         window.uiBar?.logEvent('Something strange happens...', 'warning');
         
         setTimeout(() => {
           switch (randomEvent) {
             case 'research':
               window.uiBar?.logEvent('You found old research notes!', 'success');
+              // Show dice buttons for challenge
+              if (rollBtn) rollBtn.style.display = '';
+              if (skipBtn) skipBtn.style.display = '';
               challengeUI.showAvailableChallenges('easy');
               break;
             case 'rest':
@@ -1057,6 +1100,9 @@
               break;
             case 'elite':
               window.uiBar?.logEvent('A powerful presence awakens!', 'danger');
+              // Show dice buttons for challenge
+              if (rollBtn) rollBtn.style.display = '';
+              if (skipBtn) skipBtn.style.display = '';
               challengeUI.showAvailableChallenges('hard');
               break;
             case 'trap':
@@ -1065,10 +1111,14 @@
               document.getElementById('sanity-fill').style.width = `${(game.sanity / game.maxSanity) * 100}%`;
               visualEffects.showComboText('-10 Sanity!', '#c94a4a');
               window.uiBar?.logEvent('You triggered a curse! -10 sanity', 'danger');
+              // Show continue button after trap
               setTimeout(() => {
-                progressionMap.completeNode(node.id);
-                progressionMap.show();
-              }, 1500);
+                window.uiBar?.logEvent('Click Continue when ready', 'info');
+                window.uiBar?.showContinueButton(() => {
+                  progressionMap.completeNode(node.id);
+                  progressionMap.show();
+                });
+              }, 1000);
               break;
           }
         }, 1000);
@@ -1227,6 +1277,13 @@
           uiBar.updateQuestExpanded();
           uiBar.logEvent(`Started: ${e.detail.challenge.name}`, 'info');
           uiBar.updateDicePreview();
+          
+          // Show dice buttons and hide continue button when challenge starts
+          uiBar.hideContinueButton();
+          const rollBtn = document.getElementById('roll-all-3d');
+          const skipBtn = document.getElementById('skip-challenge-btn');
+          if (rollBtn) rollBtn.style.display = '';
+          if (skipBtn) skipBtn.style.display = '';
         });
         
         // Upgrade dice button (main one in dice area)
@@ -1354,17 +1411,26 @@
                 document.getElementById('sanity-value').textContent = game.sanity;
                 document.getElementById('sanity-fill').style.width = `${(game.sanity / game.maxSanity) * 100}%`;
                 
-                // Update UI bar
-                uiBar.updateQuestPreview();
+                // Clear the quest display since challenge is done
+                uiBar.clearQuestDisplay();
                 uiBar.refresh();
                 
-                // Complete the current node and show map for next selection
-                if (game.currentNode && progressionMap) {
-                  setTimeout(() => {
-                    progressionMap.completeNode(game.currentNode.id);
-                    progressionMap.show();
-                  }, 1500);
+                // Dock dice
+                if (diceUI && diceUI.dice3d) {
+                  diceUI.dice3d.dockAllDice();
                 }
+                
+                // Show Continue button to proceed to map
+                setTimeout(() => {
+                  uiBar.logEvent('Click Continue to choose next destination', 'info');
+                  uiBar.showContinueButton(() => {
+                    // Complete the current node and show map
+                    if (game.currentNode && progressionMap) {
+                      progressionMap.completeNode(game.currentNode.id);
+                      progressionMap.show();
+                    }
+                  });
+                }, 1000);
               }, 1000);
             }
           }

@@ -360,16 +360,45 @@ export class ChallengeUI {
     this.updateLevelDisplay();
     
     // Clear current challenge
-    this.currentChallenge = null;
-    this.game.currentChallenge = null;
-    
-    // Hide challenge display after delay
-    setTimeout(() => {
-      const container = document.getElementById('challenge-display');
-      if (container) container.style.display = 'none';
-    }, 2000);
+    this.clearChallenge();
     
     return reward;
+  }
+
+  // Clear all challenge state and display
+  clearChallenge() {
+    this.currentChallenge = null;
+    this.game.currentChallenge = null;
+    this.availableChallenges = [];
+    this.rollsUsed = 0;
+    this.lastConditionResults = [];
+    
+    // Hide challenge display
+    const container = document.getElementById('challenge-display');
+    if (container) {
+      container.style.display = 'none';
+      container.className = 'challenge-display';
+    }
+    
+    // Clear condition statuses
+    const conditionsEl = document.getElementById('challenge-conditions');
+    if (conditionsEl) {
+      conditionsEl.innerHTML = '';
+    }
+    
+    // Clear challenge name/description
+    const nameEl = document.getElementById('challenge-name');
+    const descEl = document.getElementById('challenge-description');
+    const tierEl = document.getElementById('challenge-tier');
+    const rewardEl = document.getElementById('challenge-reward');
+    
+    if (nameEl) nameEl.textContent = '';
+    if (descEl) descEl.textContent = '';
+    if (tierEl) tierEl.textContent = '';
+    if (rewardEl) rewardEl.textContent = '';
+    
+    // Dispatch clear event
+    window.dispatchEvent(new CustomEvent('challengeCleared'));
   }
 
   showChallengeCompleteNotification(success, reward) {
