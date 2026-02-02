@@ -184,9 +184,13 @@ class UIRenderer {
     btnContainer.appendChild(skipBtn);
     cardGrid.parentElement.appendChild(btnContainer);
     
-    // Hide dice tray
+    // Hide dice trays
     if (this.elements.diceTray) {
       this.elements.diceTray.style.display = 'none';
+    }
+    const dice3dContainer = document.getElementById('dice-3d-container');
+    if (dice3dContainer) {
+      dice3dContainer.style.display = 'none';
     }
   }
 
@@ -228,17 +232,23 @@ class UIRenderer {
       this.elements.cardGrid.style.display = 'none';
     }
     
-    // Show dice tray
-    if (this.elements.diceTray) {
+    // Show 3D dice tray if available, otherwise fallback to 2D
+    const dice3dContainer = document.getElementById('dice-3d-container');
+    if (dice3dContainer && window.diceUI?.dice3d) {
+      dice3dContainer.style.display = 'block';
+      if (this.elements.diceTray) {
+        this.elements.diceTray.style.display = 'none';
+      }
+    } else if (this.elements.diceTray) {
       this.elements.diceTray.style.display = 'flex';
+      this.renderDice();
     }
     
-    this.renderDice();
     this.updateRollsDisplay();
     
     // Update buttons
     if (this.elements.rollBtn) {
-      this.elements.rollBtn.style.display = 'inline-block';
+      this.elements.rollBtn.style.display = window.diceUI?.dice3d ? 'none' : 'inline-block';
       this.elements.rollBtn.disabled = game.rollsRemaining <= 0;
     }
     if (this.elements.confirmBtn) {
@@ -283,9 +293,13 @@ class UIRenderer {
       cardGrid.appendChild(card);
     });
     
-    // Hide dice tray
+    // Hide dice trays
     if (this.elements.diceTray) {
       this.elements.diceTray.style.display = 'none';
+    }
+    const dice3dContainer = document.getElementById('dice-3d-container');
+    if (dice3dContainer) {
+      dice3dContainer.style.display = 'none';
     }
     
     // Back button
@@ -338,9 +352,16 @@ class UIRenderer {
       game.currentSpirit.challengeRequirement.description
     );
     
-    // Show dice tray
-    if (this.elements.diceTray) {
+    // Show 3D dice tray if available, otherwise fallback to 2D
+    const dice3dContainer = document.getElementById('dice-3d-container');
+    if (dice3dContainer && window.diceUI?.dice3d) {
+      dice3dContainer.style.display = 'block';
+      if (this.elements.diceTray) {
+        this.elements.diceTray.style.display = 'none';
+      }
+    } else if (this.elements.diceTray) {
       this.elements.diceTray.style.display = 'flex';
+      this.renderDice();
     }
     
     // Hide card grid
@@ -348,13 +369,12 @@ class UIRenderer {
       this.elements.cardGrid.style.display = 'none';
     }
     
-    this.renderDice();
     this.updateRollsDisplay();
     this.updateSpiritDisplay();
     
-    // Update buttons
+    // Update buttons - hide roll button if using 3D dice
     if (this.elements.rollBtn) {
-      this.elements.rollBtn.style.display = 'inline-block';
+      this.elements.rollBtn.style.display = window.diceUI?.dice3d ? 'none' : 'inline-block';
       this.elements.rollBtn.disabled = game.rollsRemaining <= 0;
     }
     if (this.elements.confirmBtn) {

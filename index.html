@@ -93,11 +93,21 @@
         </div>
       </header>
       
-      <!-- LEFT SIDEBAR - ALLIES -->
+      <!-- LEFT SIDEBAR - ALLIES & DICE -->
       <aside class="allies-panel">
         <h3 class="panel-title">👥 Your Allies</h3>
         <div id="allies-list" class="allies-list">
           <div class="flavor-text">No allies recruited yet</div>
+        </div>
+        
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+          <h3 class="panel-title">🎲 Dice Inventory</h3>
+          <div id="dice-inventory-mini" class="dice-inventory-mini">
+            <!-- Mini dice inventory will be rendered here -->
+          </div>
+          <button id="open-dice-inventory" class="btn" style="width: 100%; margin-top: 10px; font-size: 0.85rem;">
+            Manage Dice
+          </button>
         </div>
       </aside>
       
@@ -112,9 +122,17 @@
         <!-- Card Selection Grid (for town/spirit select) -->
         <div id="card-grid" class="card-grid" style="display: none;"></div>
         
-        <!-- Dice Tray -->
+        <!-- 3D Dice Tray -->
+        <div id="dice-3d-container" class="dice-3d-container" style="display: none;">
+          <div class="dice-3d-hint">Click die to roll • Shift+Click to lock</div>
+          <div class="dice-3d-controls">
+            <button id="roll-all-3d" class="btn btn-primary">🎲 Roll All</button>
+          </div>
+        </div>
+        
+        <!-- Fallback 2D Dice Tray (for non-WebGL) -->
         <div id="dice-tray" class="dice-tray" style="display: none;">
-          <!-- Dice will be rendered here -->
+          <!-- 2D Dice will be rendered here as fallback -->
         </div>
         
         <!-- Roll Info -->
@@ -175,15 +193,78 @@
     import { game } from './js/core/game.js';
     import { ui } from './js/core/ui.js';
     import { audio } from './js/core/audio.js';
+    import { DiceUI } from './js/core/diceUI.js';
     
     // Make game globally accessible for debugging
     window.game = game;
     window.ui = ui;
     window.audio = audio;
     
+    // Dice UI system
+    let diceUI = null;
+    
     // Initialize UI when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
       ui.init();
+      
+      // Initialize 3D Dice system
+      try {
+        diceUI = new DiceUI(game);
+        window.diceUI = diceUI;
+        
+        // Set up 3D dice view when game starts
+        const startBtn = document.getElementById('start-btn');
+        const originalClick = startBtn.onclick;
+        startBtn.addEventListener('click', () => {
+          setTimeout(() => {
+            const container = document.getElementById('dice-3d-container');
+            if (container && !diceUI.dice3d) {
+              diceUI.init3DView(container);
+            }
+          }, 100);
+        });
+        
+        // Roll all button
+        document.getElementById('roll-all-3d')?.addEventListener('click', () => {
+          if (game.rollsRemaining > 0 && diceUI.dice3d) {
+            game.rollsRemaining--;
+            diceUI.rollAll();
+            ui.render();
+          }
+        });
+        
+        // Dice inventory button
+        document.getElementById('open-dice-inventory')?.addEventListener('click', () => {
+          const modal = document.getElementById('modal-overlay');
+          modal.style.display = 'flex';
+          modal.innerHTML = `
+            <div class="modal" style="max-width: 600px;">
+              <div class="modal-header">
+                <h3>🎲 Dice Collection</h3>
+                <button class="modal-close" onclick="document.getElementById('modal-overlay').style.display='none'">&times;</button>
+              </div>
+              <div id="dice-inventory-content"></div>
+            </div>
+          `;
+          diceUI.renderInventoryPanel(document.getElementById('dice-inventory-content'));
+        });
+        
+        // Listen for roll complete events
+        window.addEventListener('diceRollComplete', (e) => {
+          const results = e.detail;
+          // Update game dice values
+          results.forEach((result, index) => {
+            if (game.dice[index]) {
+              game.dice[index].currentValue = result.value;
+            }
+          });
+          ui.render();
+        });
+        
+        console.log('3D Dice system initialized');
+      } catch (err) {
+        console.warn('3D Dice system failed to initialize, using 2D fallback:', err);
+      }
     });
   </script>
 </body>
