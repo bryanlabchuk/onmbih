@@ -79,51 +79,49 @@ export class ProgressionMap {
       .filter(node => node && !node.completed);
   }
 
-  // Tier unlock requirements - only moving UP a tier has conditions; all locations within a tier are unlocked together
+  // Tier unlock requirements - Tier 1 (School + BFH) always accessible after Home; later tiers unlock progressively
   getTierRequirements() {
     return {
-      0: { name: 'Home', requirement: null },           // Start - no condition
-      1: { name: 'Town', requirement: null },         // Tier 2 in user terms - always accessible, starting locations
-      2: { 
-        name: 'Downtown', 
-        requirement: { 
+      0: { name: 'Home', requirement: null },
+      1: { name: "School & Best Friend's House", requirement: null },  // Always adjacent to Home, always accessible once Home is done
+      2: {
+        name: 'Downtown',
+        requirement: {
+          type: 'tier1_both_completed',
+          description: "Visit School and Best Friend's House"
+        }
+      },
+      3: {
+        name: 'Outskirts',
+        requirement: {
           type: 'level_and_research',
           level: 2,
           research: 25,
           description: 'Reach Level 2 and earn 25 research'
         }
       },
-      3: { 
-        name: 'Outskirts', 
-        requirement: { 
-          type: 'level_and_research',
-          level: 3,
-          research: 50,
-          description: 'Reach Level 3 and earn 50 research'
-        }
-      },
-      4: { 
-        name: 'Dark Places', 
-        requirement: { 
+      4: {
+        name: 'Dark Places',
+        requirement: {
           type: 'level_research_allies',
           level: 3,
-          research: 75,
-          allies: 2,
-          description: 'Level 3, 75 research, and 2 allies'
+          research: 50,
+          allies: 1,
+          description: 'Level 3, 50 research, and 1 ally'
         }
       },
-      5: { 
-        name: 'The Edge', 
-        requirement: { 
+      5: {
+        name: 'The Edge',
+        requirement: {
           type: 'level_and_research',
           level: 4,
           research: 100,
           description: 'Reach Level 4 and earn 100 research'
         }
       },
-      6: { 
-        name: 'Blackwood Manor', 
-        requirement: { 
+      6: {
+        name: 'Blackwood Manor',
+        requirement: {
           type: 'level_and_research',
           level: 5,
           research: 150,
@@ -131,6 +129,12 @@ export class ProgressionMap {
         }
       }
     };
+  }
+
+  // Whether both Tier 1 locations (School and Best Friend's House) have been completed
+  hasCompletedBothTier1() {
+    const tier1 = this.map?.tiers[1] || [];
+    return tier1.length >= 2 && tier1.every(n => n.completed);
   }
 
   // Get player level from game (research-based)
@@ -147,14 +151,30 @@ export class ProgressionMap {
   checkTierRequirement(tier) {
     const requirements = this.getTierRequirements();
     const tierReq = requirements[tier];
-    
+
     if (!tierReq || !tierReq.requirement) return { met: true, current: 0, required: 0, description: '', tierName: tierReq?.name };
-    
+
     const req = tierReq.requirement;
     const level = this.getPlayerLevel();
     const research = this.game.totalResearchEarned || 0;
     const allies = this.game.allies?.length || 0;
-    
+
+    if (req.type === 'tier1_both_completed') {
+      const tier1 = this.map?.tiers[1] || [];
+      const completed = tier1.filter(n => n.completed).length;
+      const required = tier1.length;
+      const met = this.hasCompletedBothTier1();
+      return {
+        met,
+        current: { completed, required },
+        required: { completed: required },
+        description: req.description || "Visit School and Best Friend's House",
+        tierName: tierReq.name,
+        levelOk: true,
+        researchOk: true
+      };
+    }
+
     if (req.type === 'level_and_research') {
       const levelOk = level >= req.level;
       const researchOk = research >= req.research;
@@ -294,7 +314,7 @@ export class ProgressionMap {
         this.map.availableNodes.add(node.id);
       });
     }
-    
+
     console.log('Available nodes:', Array.from(this.map.availableNodes), 'hasLeftHome:', this.hasLeftHome(), 'highestUnlocked:', highestUnlocked);
   }
 
@@ -529,10 +549,11 @@ export class ProgressionMap {
 
   // Format tier progress for display
   formatTierProgress(tierReq) {
-    if (!tierReq.required) return '';
+    if (!tierReq || !tierReq.required) return '';
     const r = tierReq.required;
     const c = tierReq.current;
     if (typeof r === 'number' && typeof c === 'number') return `${c}/${r}`;
+    if (r && r.completed != null && c && c.completed != null) return `${c.completed}/${r.completed} visited`;
     if (r.level != null && r.research != null) {
       const lvl = (c && c.level != null) ? c.level : this.getPlayerLevel();
       const res = (c && c.research != null) ? c.research : (this.game.totalResearchEarned || 0);

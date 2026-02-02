@@ -351,49 +351,55 @@ export class MapGenerator {
     for (let tier = 0; tier < map.tiers.length - 1; tier++) {
       const currentTier = map.tiers[tier];
       const nextTier = map.tiers[tier + 1];
-      
+
+      // Home (tier 0) always connects to BOTH School and Best Friend's House (tier 1)
+      if (tier === 0 && currentTier.length === 1 && nextTier.length === 2) {
+        const home = currentTier[0];
+        nextTier.forEach(target => {
+          map.connections.push({ from: home.id, to: target.id, fromTier: 0, toTier: 1 });
+          home.connections.out.push(target.id);
+          target.connections.in.push(home.id);
+        });
+        continue;
+      }
+
       // Ensure every node has at least one outgoing connection
       currentTier.forEach((node, nodeIndex) => {
-        // Connect to 1-2 nodes in next tier
         const connectionCount = 1 + (this.rng() > 0.5 ? 1 : 0);
         const possibleTargets = [...nextTier];
-        
+
         for (let c = 0; c < connectionCount && possibleTargets.length > 0; c++) {
-          // Prefer nodes that are somewhat aligned horizontally
           const targetIndex = this.selectAlignedTarget(nodeIndex, currentTier.length, possibleTargets, nextTier.length);
           const target = possibleTargets[targetIndex];
-          
-          // Create connection
+
           const connection = {
             from: node.id,
             to: target.id,
             fromTier: tier,
             toTier: tier + 1
           };
-          
+
           map.connections.push(connection);
           node.connections.out.push(target.id);
           target.connections.in.push(node.id);
-          
-          // Remove from possible targets to avoid duplicates
+
           possibleTargets.splice(targetIndex, 1);
         }
       });
-      
+
       // Ensure every node in next tier has at least one incoming connection
       nextTier.forEach(node => {
         if (node.connections.in.length === 0) {
-          // Connect from a random node in current tier
           const sourceIndex = Math.floor(this.rng() * currentTier.length);
           const source = currentTier[sourceIndex];
-          
+
           const connection = {
             from: source.id,
             to: node.id,
             fromTier: tier,
             toTier: tier + 1
           };
-          
+
           map.connections.push(connection);
           source.connections.out.push(node.id);
           node.connections.in.push(source.id);
