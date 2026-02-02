@@ -139,6 +139,9 @@
 }
 
 .tier-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-display);
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -150,10 +153,47 @@
   border: 1px solid var(--border-color);
 }
 
+.tier-name {
+  color: var(--text-primary);
+}
+
+.tier-requirement {
+  font-size: 0.65rem;
+  color: var(--candle-orange);
+  background: rgba(201, 148, 74, 0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.tier-progress {
+  font-size: 0.65rem;
+  color: var(--spirit-green);
+  background: rgba(74, 155, 106, 0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* Locked tier styling */
+.tier-locked {
+  opacity: 0.5;
+}
+
+.tier-locked .tier-label {
+  border-color: var(--text-muted);
+}
+
+.tier-locked .tier-name::before {
+  content: '🔒 ';
+}
+
 .tier-start .tier-label {
   background: var(--ghost-blue);
   color: white;
   border-color: var(--ghost-blue);
+}
+
+.tier-start .tier-name {
+  color: white;
 }
 
 .tier-boss .tier-label {
@@ -161,6 +201,10 @@
   color: white;
   border-color: var(--blood-red);
   animation: pulse-danger 2s ease-in-out infinite;
+}
+
+.tier-boss .tier-name {
+  color: white;
 }
 
 @keyframes pulse-danger {
@@ -434,6 +478,54 @@
   padding: 4px 10px;
   border-radius: 10px;
   border: 1px solid var(--border-color);
+}
+
+.preview-tier-badge.unlocked {
+  background: rgba(74, 155, 106, 0.2);
+  color: var(--spirit-green);
+  border-color: var(--spirit-green);
+}
+
+.preview-tier-badge.locked {
+  background: rgba(201, 74, 74, 0.2);
+  color: var(--blood-red);
+  border-color: var(--blood-red);
+}
+
+/* Locked preview details */
+.preview-locked {
+  text-align: center;
+  padding: 15px;
+  background: var(--bg-dark);
+  border-radius: var(--border-radius);
+  margin: 10px 0;
+}
+
+.preview-locked .lock-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.preview-locked .lock-text {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--blood-red);
+  margin-bottom: 5px;
+}
+
+.preview-locked .lock-requirement {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.preview-locked .lock-progress {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--bg-medium);
+  border-radius: 15px;
+  font-size: 0.85rem;
+  color: var(--candle-orange);
 }
 
 .preview-icon {

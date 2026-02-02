@@ -27,7 +27,22 @@ export class ProgressionMap {
     startNode.available = true;
     this.map.availableNodes.add(startNode.id);
     
+    console.log('Map initialized. Start node:', startNode.id);
+    console.log('Tier 1 nodes:', this.map.tiers[1]?.map(n => n.id));
+    
     return this.map;
+  }
+
+  // Force unlock tier 1 after start (call this when game begins)
+  unlockTier1() {
+    const startNode = this.map.tiers[0]?.[0];
+    if (startNode) {
+      startNode.completed = true;
+      this.map.completedNodes.add(startNode.id);
+      this.map.highestCompletedTier = 0;
+    }
+    this.refreshAvailableNodes();
+    console.log('Tier 1 unlocked. Available nodes:', Array.from(this.map.availableNodes));
   }
 
   // Get the current map state
@@ -48,7 +63,96 @@ export class ProgressionMap {
       .filter(node => node && !node.completed);
   }
 
-  // Complete a node and unlock connections
+  // Tier unlock requirements
+  getTierRequirements() {
+    return {
+      0: { name: 'Home', requirement: null }, // Start - always available
+      1: { name: 'Town', requirement: null }, // Always available after start
+      2: { 
+        name: 'Downtown', 
+        requirement: { 
+          type: 'challenges',
+          count: 2,
+          description: 'Complete 2 challenges'
+        }
+      },
+      3: { 
+        name: 'Outskirts', 
+        requirement: { 
+          type: 'research',
+          count: 50,
+          description: 'Earn 50 total research'
+        }
+      },
+      4: { 
+        name: 'Dark Places', 
+        requirement: { 
+          type: 'allies',
+          count: 2,
+          description: 'Recruit 2 allies'
+        }
+      },
+      5: { 
+        name: 'The Edge', 
+        requirement: { 
+          type: 'challenges',
+          count: 5,
+          description: 'Complete 5 challenges'
+        }
+      },
+      6: { 
+        name: 'Blackwood Manor', 
+        requirement: { 
+          type: 'research',
+          count: 150,
+          description: 'Earn 150 total research'
+        }
+      }
+    };
+  }
+
+  // Check if player meets tier requirements
+  checkTierRequirement(tier) {
+    const requirements = this.getTierRequirements();
+    const tierReq = requirements[tier];
+    
+    if (!tierReq || !tierReq.requirement) return { met: true };
+    
+    const req = tierReq.requirement;
+    let current = 0;
+    
+    switch (req.type) {
+      case 'challenges':
+        current = this.map.completedNodes.size;
+        break;
+      case 'research':
+        current = this.game.totalResearchEarned || 0;
+        break;
+      case 'allies':
+        current = this.game.allies?.length || 0;
+        break;
+    }
+    
+    return {
+      met: current >= req.count,
+      current,
+      required: req.count,
+      description: req.description,
+      tierName: tierReq.name
+    };
+  }
+
+  // Get highest unlocked tier
+  getHighestUnlockedTier() {
+    for (let tier = 6; tier >= 0; tier--) {
+      if (this.checkTierRequirement(tier).met) {
+        return tier;
+      }
+    }
+    return 1; // Always can access tier 1
+  }
+
+  // Complete a node and update available nodes
   completeNode(nodeId) {
     console.log('Completing node:', nodeId);
     const node = this.map.nodes[nodeId];
@@ -66,51 +170,90 @@ export class ProgressionMap {
       this.map.highestCompletedTier = node.tier;
     }
 
-    // Only unlock nodes in the NEXT tier (tier + 1) if ALL requirements are met
-    const nextTier = node.tier + 1;
+    // Refresh available nodes based on current progress
+    this.refreshAvailableNodes();
+
+    // Update current position
+    this.map.currentNodeId = null;
     
-    // Clear all available nodes first (enforce strict tier progression)
+    console.log('Available nodes after completion:', Array.from(this.map.availableNodes));
+    console.log('Highest unlocked tier:', this.getHighestUnlockedTier());
+  }
+
+  // Refresh which nodes are available based on tier requirements
+  refreshAvailableNodes() {
     this.map.availableNodes.clear();
     
-    // Find all nodes in the next tier that are connected from completed nodes
-    if (nextTier < this.map.tiers.length) {
-      const nextTierNodes = this.map.tiers[nextTier];
+    const highestUnlocked = this.getHighestUnlockedTier();
+    console.log('Refreshing available nodes. Highest unlocked tier:', highestUnlocked);
+    
+    // Make all uncompleted nodes in unlocked tiers available (if connected)
+    for (let tier = 1; tier <= highestUnlocked; tier++) {
+      const tierNodes = this.map.tiers[tier];
+      if (!tierNodes) continue;
       
-      nextTierNodes.forEach(nextNode => {
-        // Check if ANY incoming connection comes from a completed node
-        const hasCompletedParent = nextNode.connections.in.some(parentId => {
-          const parent = this.map.nodes[parentId];
-          return parent && parent.completed;
-        });
+      tierNodes.forEach(node => {
+        if (node.completed) return;
         
-        if (hasCompletedParent && !nextNode.completed) {
-          nextNode.available = true;
-          this.map.availableNodes.add(nextNode.id);
-          console.log('Unlocked node:', nextNode.id, nextNode.locationName, 'in tier', nextTier);
+        // For tier 1, always available after start is complete
+        if (tier === 1) {
+          const startComplete = this.map.tiers[0]?.[0]?.completed;
+          if (startComplete) {
+            node.available = true;
+            this.map.availableNodes.add(node.id);
+          }
+        } else {
+          // For higher tiers, need a completed parent OR all previous tier nodes complete
+          const hasCompletedParent = node.connections.in.some(parentId => {
+            const parent = this.map.nodes[parentId];
+            return parent && parent.completed;
+          });
+          
+          // Or check if any node in previous tier is completed
+          const prevTierComplete = this.map.tiers[tier - 1]?.some(n => n.completed);
+          
+          if (hasCompletedParent || prevTierComplete) {
+            node.available = true;
+            this.map.availableNodes.add(node.id);
+          }
         }
       });
     }
-
-    // Update current position
-    this.map.currentNodeId = null; // Will be set when player selects next node
-    
-    console.log('Available nodes after completion:', Array.from(this.map.availableNodes));
-    console.log('Highest completed tier:', this.map.highestCompletedTier);
   }
 
   // Get the current tier the player should be on
   getCurrentTier() {
-    return (this.map.highestCompletedTier || 0) + 1;
+    return Math.max(1, (this.map.highestCompletedTier || 0) + 1);
   }
 
-  // Check if a node can be accessed (must be in next tier from highest completed)
+  // Check if a node can be accessed
   canAccessNode(nodeId) {
     const node = this.map.nodes[nodeId];
     if (!node) return false;
     if (node.completed) return false;
     
-    const allowedTier = this.getCurrentTier();
-    return node.tier === allowedTier && this.map.availableNodes.has(nodeId);
+    // Check if tier is unlocked
+    const tierUnlocked = this.checkTierRequirement(node.tier).met;
+    if (!tierUnlocked) return false;
+    
+    // Check if node is in available set
+    return this.map.availableNodes.has(nodeId);
+  }
+
+  // Get tier status for UI
+  getTierStatus(tier) {
+    const req = this.checkTierRequirement(tier);
+    const tierNodes = this.map.tiers[tier] || [];
+    const completedInTier = tierNodes.filter(n => n.completed).length;
+    
+    return {
+      tier,
+      name: this.getTierRequirements()[tier]?.name || `Floor ${tier}`,
+      unlocked: req.met,
+      requirement: req,
+      totalNodes: tierNodes.length,
+      completedNodes: completedInTier
+    };
   }
 
   // Move to a node
@@ -162,17 +305,25 @@ export class ProgressionMap {
   renderTiers() {
     if (!this.map) return '<div class="map-empty">No map generated</div>';
 
+    const tierRequirements = this.getTierRequirements();
+
     // Render from bottom (start) to top (boss)
     const tiersHTML = this.map.tiers.map((tier, tierIndex) => {
+      const tierStatus = this.getTierStatus(tierIndex);
       const tierClass = tierIndex === 0 ? 'tier-start' : 
                         tierIndex === this.map.tiers.length - 1 ? 'tier-boss' : '';
+      const lockedClass = !tierStatus.unlocked ? 'tier-locked' : '';
+      const tierName = tierRequirements[tierIndex]?.name || `Floor ${tierIndex}`;
       
       return `
-        <div class="map-tier ${tierClass}" data-tier="${tierIndex}">
+        <div class="map-tier ${tierClass} ${lockedClass}" data-tier="${tierIndex}">
           <div class="tier-label">
-            ${tierIndex === 0 ? 'START' : 
-              tierIndex === this.map.tiers.length - 1 ? 'BOSS' : 
-              `Floor ${tierIndex}`}
+            <span class="tier-name">${tierName}</span>
+            ${!tierStatus.unlocked && tierStatus.requirement?.description ? `
+              <span class="tier-requirement">${tierStatus.requirement.current}/${tierStatus.requirement.required}</span>
+            ` : tierStatus.completedNodes > 0 ? `
+              <span class="tier-progress">${tierStatus.completedNodes}/${tierStatus.totalNodes}</span>
+            ` : ''}
           </div>
           <div class="tier-nodes">
             ${tier.map(node => this.renderNode(node)).join('')}
@@ -313,8 +464,11 @@ export class ProgressionMap {
     const difficulty = getDifficultySettings(node.difficulty);
     const isAvailable = this.canAccessNode(node.id);
     const isCompleted = node.completed;
-    const currentAllowedTier = this.getCurrentTier();
-    const isFutureTier = node.tier > currentAllowedTier;
+    
+    // Check tier requirements
+    const tierStatus = this.getTierStatus(node.tier);
+    const tierReq = this.checkTierRequirement(node.tier);
+    const tierName = this.getTierRequirements()[node.tier]?.name || `Floor ${node.tier}`;
 
     preview.innerHTML = `
       <div class="preview-header" style="border-color: ${nodeType.color}">
@@ -325,7 +479,9 @@ export class ProgressionMap {
         </div>
       </div>
       
-      <div class="preview-tier-badge">Floor ${node.tier}</div>
+      <div class="preview-tier-badge ${tierReq.met ? 'unlocked' : 'locked'}">
+        ${tierReq.met ? '🔓' : '🔒'} ${tierName}
+      </div>
       
       <p class="preview-description">${nodeType.description}</p>
       
@@ -364,10 +520,15 @@ export class ProgressionMap {
         </button>
       ` : isCompleted ? `
         <div class="preview-completed">✓ Completed</div>
-      ` : isFutureTier ? `
-        <div class="preview-locked">🔒 Floor ${node.tier} - Complete Floor ${currentAllowedTier} first</div>
+      ` : !tierReq.met ? `
+        <div class="preview-locked">
+          <div class="lock-icon">🔒</div>
+          <div class="lock-text">${tierName} Locked</div>
+          <div class="lock-requirement">${tierReq.description}</div>
+          <div class="lock-progress">${tierReq.current}/${tierReq.required}</div>
+        </div>
       ` : `
-        <div class="preview-locked">🔒 Complete a connected path to unlock</div>
+        <div class="preview-locked">🔒 Complete a nearby location first</div>
       `}
     `;
 

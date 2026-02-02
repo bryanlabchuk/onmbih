@@ -791,9 +791,10 @@
       // Initialize progression map with new seed
       progressionMap.init(Date.now());
       
-      // Auto-complete the start node so tier 1 locations are available
-      const startNodeId = progressionMap.map.currentNodeId;
-      progressionMap.completeNode(startNodeId);
+      // Unlock tier 1 - makes all tier 1 locations available
+      progressionMap.unlockTier1();
+      
+      console.log('Game started. Available nodes:', Array.from(progressionMap.map.availableNodes));
       
       // Show game screen
       showScreen('game-screen');
@@ -813,10 +814,10 @@
           const locationName = document.getElementById('current-location-name');
           if (locationName) locationName.textContent = 'Your House';
           
-          // Show map - player starts at home, first destinations are available
+          // Show map - tier 1 locations are available
           setTimeout(() => {
             progressionMap.show();
-            if (uiBar) uiBar.logEvent('You\'re at home. Choose your first destination...', 'info');
+            if (uiBar) uiBar.logEvent('Choose your first destination...', 'info');
           }, 500);
         }, 300);
       }, 200);
