@@ -150,11 +150,24 @@ export class Dice3DSystem {
     floorBody.position.set(0, -0.25, 0);
     this.world.addBody(floorBody);
     
-    // Tray walls
-    this.createWall(7, 0.75, 0, 'right');
-    this.createWall(-7, 0.75, 0, 'left');
-    this.createWall(0, 0.75, 5, 'back');
-    this.createWall(0, 0.75, -5, 'front');
+    // Visible tray walls (short, decorative)
+    this.createVisibleWall(7, 0.75, 0, 'right');
+    this.createVisibleWall(-7, 0.75, 0, 'left');
+    this.createVisibleWall(0, 0.75, 5, 'back');
+    this.createVisibleWall(0, 0.75, -5, 'front');
+    
+    // Invisible tall containment walls (physics only, much taller)
+    this.createInvisibleWall(7.5, 10, 0, 'right');
+    this.createInvisibleWall(-7.5, 10, 0, 'left');
+    this.createInvisibleWall(0, 10, 5.5, 'back');
+    this.createInvisibleWall(0, 10, -5.5, 'front');
+    
+    // Invisible ceiling to prevent dice escaping upward
+    const ceilingShape = new CANNON.Box(new CANNON.Vec3(8, 0.5, 6));
+    const ceilingBody = new CANNON.Body({ mass: 0, material: this.floorMaterial });
+    ceilingBody.addShape(ceilingShape);
+    ceilingBody.position.set(0, 15, 0);
+    this.world.addBody(ceilingBody);
     
     // Tray felt texture overlay
     const feltGeometry = new THREE.PlaneGeometry(13.8, 9.8);
@@ -170,7 +183,7 @@ export class Dice3DSystem {
     this.scene.add(felt);
   }
 
-  createWall(x, y, z, side) {
+  createVisibleWall(x, y, z, side) {
     const isHorizontal = side === 'front' || side === 'back';
     const width = isHorizontal ? 14 : 0.4;
     const depth = isHorizontal ? 0.4 : 10;
@@ -188,8 +201,22 @@ export class Dice3DSystem {
     wall.receiveShadow = true;
     this.scene.add(wall);
     
-    // Physics wall
+    // Physics wall (short, visible height)
     const wallShape = new CANNON.Box(new CANNON.Vec3(width / 2, 0.75, depth / 2));
+    const wallBody = new CANNON.Body({ mass: 0, material: this.floorMaterial });
+    wallBody.addShape(wallShape);
+    wallBody.position.set(x, y, z);
+    this.world.addBody(wallBody);
+  }
+
+  createInvisibleWall(x, y, z, side) {
+    // Tall invisible physics-only walls to contain dice
+    const isHorizontal = side === 'front' || side === 'back';
+    const width = isHorizontal ? 16 : 1;
+    const depth = isHorizontal ? 1 : 12;
+    const height = 20; // Very tall
+    
+    const wallShape = new CANNON.Box(new CANNON.Vec3(width / 2, height / 2, depth / 2));
     const wallBody = new CANNON.Body({ mass: 0, material: this.floorMaterial });
     wallBody.addShape(wallShape);
     wallBody.position.set(x, y, z);
@@ -401,10 +428,10 @@ export class Dice3DSystem {
     
     console.log('Rolling die:', dieId);
     
-    // Reset position above tray with random offset
-    const startX = (Math.random() - 0.5) * 6;
-    const startZ = (Math.random() - 0.5) * 4;
-    die.body.position.set(startX, 8 + Math.random() * 2, startZ);
+    // Reset position above tray with random offset (keep within bounds)
+    const startX = (Math.random() - 0.5) * 4; // Reduced spread
+    const startZ = (Math.random() - 0.5) * 3;
+    die.body.position.set(startX, 6 + Math.random() * 2, startZ); // Lower start height
     die.body.velocity.set(0, 0, 0);
     die.body.angularVelocity.set(0, 0, 0);
     
@@ -415,23 +442,41 @@ export class Dice3DSystem {
       Math.random() * Math.PI * 2
     );
     
-    // Apply throw force - downward with random horizontal
+    // Apply throw force - mostly downward with gentle horizontal
     const throwForce = new CANNON.Vec3(
-      (Math.random() - 0.5) * 15,
-      -20 - Math.random() * 10,
-      (Math.random() - 0.5) * 15
+      (Math.random() - 0.5) * 6,  // Reduced horizontal force
+      -15 - Math.random() * 5,    // Reduced downward force
+      (Math.random() - 0.5) * 6
     );
     die.body.applyImpulse(throwForce, new CANNON.Vec3(0, 0, 0));
     
-    // Apply spin
+    // Apply spin (reduced)
     const spin = new CANNON.Vec3(
-      (Math.random() - 0.5) * 40,
-      (Math.random() - 0.5) * 40,
-      (Math.random() - 0.5) * 40
+      (Math.random() - 0.5) * 20,  // Reduced spin
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20
     );
     die.body.angularVelocity.set(spin.x, spin.y, spin.z);
     
     die.body.wakeUp();
+  }
+
+  // Reset a die that has escaped bounds
+  resetDiePosition(die) {
+    die.body.position.set(
+      (Math.random() - 0.5) * 4,
+      3,
+      (Math.random() - 0.5) * 3
+    );
+    die.body.velocity.set(0, -2, 0);
+    die.body.angularVelocity.set(0, 0, 0);
+    die.body.wakeUp();
+  }
+
+  // Check if die is out of bounds
+  isDieOutOfBounds(die) {
+    const pos = die.body.position;
+    return Math.abs(pos.x) > 10 || pos.y < -5 || pos.y > 20 || Math.abs(pos.z) > 8;
   }
 
   rollAll() {
@@ -453,10 +498,18 @@ export class Dice3DSystem {
 
   checkSettled() {
     let checkCount = 0;
-    const maxChecks = 100; // 10 seconds max
+    const maxChecks = 60; // 6 seconds max (reduced from 10)
     
     const checkInterval = setInterval(() => {
       checkCount++;
+      
+      // Check for out-of-bounds dice and reset them
+      this.dice.forEach(die => {
+        if (!die.locked && this.isDieOutOfBounds(die)) {
+          console.log('Die escaped bounds, resetting:', die.id);
+          this.resetDiePosition(die);
+        }
+      });
       
       const allSettled = this.dice.every(die => {
         if (die.locked) return true;
@@ -464,11 +517,21 @@ export class Dice3DSystem {
         const angularVelocity = die.body.angularVelocity;
         const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2);
         const angSpeed = Math.sqrt(angularVelocity.x ** 2 + angularVelocity.y ** 2 + angularVelocity.z ** 2);
-        return speed < 0.05 && angSpeed < 0.05;
+        return speed < 0.1 && angSpeed < 0.1; // Slightly more lenient threshold
       });
       
       if (allSettled || checkCount >= maxChecks) {
         clearInterval(checkInterval);
+        
+        // Force stop any remaining motion
+        this.dice.forEach(die => {
+          if (!die.locked) {
+            die.body.velocity.set(0, 0, 0);
+            die.body.angularVelocity.set(0, 0, 0);
+            die.body.sleep();
+          }
+        });
+        
         this.isRolling = false;
         this.readDiceValues();
         

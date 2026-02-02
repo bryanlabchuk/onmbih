@@ -50,6 +50,7 @@
       
       <div class="btn-group">
         <button id="start-btn" class="btn btn-primary">Begin Investigation</button>
+        <button id="how-to-play-btn" class="btn">How to Play</button>
       </div>
       
       <div style="margin-top: 40px; font-size: 0.8rem; color: var(--text-muted); max-width: 500px;">
@@ -60,6 +61,168 @@
           <p style="margin-bottom: 8px;">👥 <strong>Recruit allies</strong> with special dice-modifying abilities</p>
           <p style="margin-bottom: 8px;">👻 <strong>Challenge spirits</strong> by meeting their victory conditions</p>
           <p>🏆 <strong>Banish all 7</strong> to free Derek from the family curse!</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- HOW TO PLAY SCREEN -->
+    <div id="how-to-play-screen" class="how-to-play-screen" style="display: none;">
+      <div class="how-to-play-content">
+        <button id="close-how-to-play" class="btn how-to-play-close">&times;</button>
+        
+        <h1>📖 How to Play</h1>
+        <p class="how-to-subtitle">A guide to saving your haunted boyfriend</p>
+        
+        <div class="how-to-sections">
+          <!-- Overview -->
+          <section class="how-to-section">
+            <h2>🎯 Overview</h2>
+            <p>Your boyfriend Derek is possessed by seven generations of his ancestors' spirits. Your goal is to banish all seven spirits to free him from the family curse.</p>
+            <p>You'll need to <strong>research</strong> the spirits, <strong>recruit allies</strong>, <strong>upgrade your dice</strong>, and <strong>challenge</strong> each spirit to banish them.</p>
+          </section>
+          
+          <!-- Game Flow -->
+          <section class="how-to-section">
+            <h2>🔄 Game Flow</h2>
+            <div class="flow-steps">
+              <div class="flow-step">
+                <span class="step-num">1</span>
+                <span class="step-icon">🗺️</span>
+                <div class="step-content">
+                  <strong>Travel</strong>
+                  <p>Use the map to visit locations around Blackwood. Each location offers different activities and bonuses.</p>
+                </div>
+              </div>
+              <div class="flow-step">
+                <span class="step-num">2</span>
+                <span class="step-icon">👥</span>
+                <div class="step-content">
+                  <strong>Recruit Allies</strong>
+                  <p>Meet townsfolk who can join your investigation. Each ally has unique abilities that modify your dice rolls.</p>
+                </div>
+              </div>
+              <div class="flow-step">
+                <span class="step-num">3</span>
+                <span class="step-icon">📖</span>
+                <div class="step-content">
+                  <strong>Research</strong>
+                  <p>Roll dice to gather research points. Research unlocks new dice upgrades and reveals spirit weaknesses.</p>
+                </div>
+              </div>
+              <div class="flow-step">
+                <span class="step-num">4</span>
+                <span class="step-icon">⚔️</span>
+                <div class="step-content">
+                  <strong>Challenge Spirits</strong>
+                  <p>When you've gathered enough research, challenge a spirit. Meet their victory conditions to banish them!</p>
+                </div>
+              </div>
+            </div>
+          </section>
+          
+          <!-- Dice System -->
+          <section class="how-to-section">
+            <h2>🎲 Dice System</h2>
+            <p>Dice are your primary tool for both research and spirit challenges.</p>
+            
+            <h3>Rolling</h3>
+            <ul>
+              <li><strong>Click "Roll All"</strong> or click individual dice to roll them</li>
+              <li>You get <strong>3 rolls per round</strong></li>
+              <li><strong>Shift+Click</strong> a die to lock it (it won't re-roll)</li>
+            </ul>
+            
+            <h3>Scoring Bonuses</h3>
+            <p>Certain combinations give bonus points:</p>
+            <div class="bonus-grid">
+              <span class="bonus-example">Pair: +5</span>
+              <span class="bonus-example">Two Pair: +15</span>
+              <span class="bonus-example">Three of a Kind: +25</span>
+              <span class="bonus-example">Full House: +35</span>
+              <span class="bonus-example">Small Straight: +30</span>
+              <span class="bonus-example">Large Straight: +45</span>
+            </div>
+            
+            <h3>Upgrading Dice</h3>
+            <p>Spend research points to upgrade your dice:</p>
+            <ul>
+              <li><strong>Shapes</strong> - Unlock D8, D10, D12, and D20 dice</li>
+              <li><strong>Colors</strong> - Colored dice provide contextual bonuses</li>
+              <li><strong>Face Values</strong> - Increase individual face values</li>
+              <li><strong>Modifiers</strong> - Add special effects like Reroll, Weighted, Clone, Exploding</li>
+            </ul>
+          </section>
+          
+          <!-- Research Milestones -->
+          <section class="how-to-section">
+            <h2>📚 Research Milestones</h2>
+            <p>As you accumulate research, you unlock new capabilities:</p>
+            <div class="milestone-list">
+              <div class="milestone-item"><strong>25</strong> - Unlock colored dice (Red, Blue, Green)</div>
+              <div class="milestone-item"><strong>50</strong> - Unlock D8 dice</div>
+              <div class="milestone-item"><strong>75</strong> - Unlock Reroll and +1 modifiers</div>
+              <div class="milestone-item"><strong>100</strong> - Unlock D10 dice</div>
+              <div class="milestone-item"><strong>150</strong> - Unlock Purple and Gold colors</div>
+              <div class="milestone-item"><strong>200</strong> - Unlock Weighted and Clone modifiers</div>
+              <div class="milestone-item"><strong>250</strong> - Unlock D12 dice</div>
+              <div class="milestone-item"><strong>500</strong> - Unlock the legendary D20!</div>
+            </div>
+          </section>
+          
+          <!-- Allies -->
+          <section class="how-to-section">
+            <h2>👥 Allies</h2>
+            <p>Allies are townsfolk who help your investigation. Each has a unique ability:</p>
+            <ul>
+              <li><strong>Passive abilities</strong> - Always active (e.g., "+1 to all research rolls")</li>
+              <li><strong>Triggered abilities</strong> - Activate on certain conditions (e.g., "On rolling a 6...")</li>
+              <li><strong>Active abilities</strong> - Can be activated once per round</li>
+            </ul>
+            <p>You can have up to <strong>5 allies</strong> at a time. Choose wisely!</p>
+          </section>
+          
+          <!-- Spirits -->
+          <section class="how-to-section">
+            <h2>👻 Spirits</h2>
+            <p>Seven ancestral spirits haunt Derek. Each has unique challenge conditions:</p>
+            <ul>
+              <li><strong>Score challenges</strong> - Roll a total above a target number</li>
+              <li><strong>Pattern challenges</strong> - Roll specific combinations (pairs, straights)</li>
+              <li><strong>Specific value challenges</strong> - Roll certain numbers</li>
+            </ul>
+            <p>Defeating a spirit may unlock special dice faces as rewards!</p>
+          </section>
+          
+          <!-- Locations -->
+          <section class="how-to-section">
+            <h2>🗺️ Locations</h2>
+            <p>Each location in Blackwood offers different benefits:</p>
+            <ul>
+              <li><strong>Library</strong> - +50% research bonus</li>
+              <li><strong>Occult Store</strong> - +1 spirit damage</li>
+              <li><strong>Electronics Store</strong> - 20% dice upgrade discount</li>
+              <li><strong>Soda Fountain</strong> - Restore sanity</li>
+              <li><strong>Cemetery</strong> - Higher spirit encounter chance</li>
+            </ul>
+            <p>Some locations are locked until you progress further in the game.</p>
+          </section>
+          
+          <!-- Tips -->
+          <section class="how-to-section">
+            <h2>💡 Tips</h2>
+            <ul>
+              <li>Focus on <strong>research first</strong> to unlock dice upgrades before challenging spirits</li>
+              <li><strong>Lock high-value dice</strong> to preserve good rolls</li>
+              <li>Match <strong>ally abilities</strong> to your play style</li>
+              <li><strong>Location bonuses stack</strong> with ally abilities</li>
+              <li>Watch your <strong>sanity</strong> - if it reaches zero, it's game over!</li>
+              <li>Some spirits are <strong>weaker to certain colors</strong> or dice types</li>
+            </ul>
+          </section>
+        </div>
+        
+        <div class="how-to-footer">
+          <button id="start-from-help" class="btn btn-primary">Start Playing</button>
         </div>
       </div>
     </div>
@@ -471,6 +634,26 @@
       } catch (err) {
         console.error('3D Dice system failed to initialize:', err);
       }
+      
+      // How to Play screen handlers
+      const howToPlayScreen = document.getElementById('how-to-play-screen');
+      const titleScreen = document.getElementById('title-screen');
+      
+      document.getElementById('how-to-play-btn')?.addEventListener('click', () => {
+        titleScreen.style.display = 'none';
+        howToPlayScreen.style.display = 'block';
+      });
+      
+      document.getElementById('close-how-to-play')?.addEventListener('click', () => {
+        howToPlayScreen.style.display = 'none';
+        titleScreen.style.display = 'flex';
+      });
+      
+      document.getElementById('start-from-help')?.addEventListener('click', () => {
+        howToPlayScreen.style.display = 'none';
+        // Trigger the start button click
+        document.getElementById('start-btn').click();
+      });
     });
   </script>
 </body>
