@@ -1,1 +1,184 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oh No My Boyfriend Is Haunted</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
+</head>
+<body>
+  <div id="game-container">
+    
+    <!-- TITLE SCREEN -->
+    <div id="title-screen" class="title-screen">
+      <h1 class="main-title">Oh No My Boyfriend Is Haunted</h1>
+      <p class="subtitle">(sarcastic)</p>
+      
+      <div class="title-flavor">
+        <p>
+          Derek Blackwood seemed like the perfect boyfriend. Cute, sweet, and only 
+          <em>slightly</em> possessed by the vengeful spirits of his ancestors.
+        </p>
+        <p style="margin-top: 15px;">
+          Seven generations of Blackwoods haunt him. Seven spirits that must be banished.
+          Armed with nothing but dice, research, and the questionable help of the local 
+          townsfolk, you're going to save him.
+        </p>
+        <p style="margin-top: 15px;">
+          Or die trying. Probably die trying.
+        </p>
+      </div>
+      
+      <div style="margin: 30px 0;">
+        <img src="assets/townsfolk/TeenBoy01.png" alt="Derek" 
+             style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--ghost-blue); box-shadow: 0 0 30px rgba(106, 163, 199, 0.4);"
+             onerror="this.style.display='none'">
+      </div>
+      
+      <div class="btn-group">
+        <button id="start-btn" class="btn btn-primary">Begin Investigation</button>
+      </div>
+      
+      <div style="margin-top: 40px; font-size: 0.8rem; color: var(--text-muted);">
+        <p>A roguelike card & dice game</p>
+        <p style="margin-top: 5px;">Click dice to lock them • Gather research • Banish spirits</p>
+      </div>
+    </div>
+    
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="game-main" style="display: none;">
+      
+      <!-- HEADER -->
+      <header class="game-header" style="grid-column: 1 / -1;">
+        <div class="game-title">
+          <h1 style="font-size: 1.2rem;">Oh No My Boyfriend Is Haunted</h1>
+        </div>
+        
+        <div class="stats-bar">
+          <div class="stat">
+            <span class="stat-label">Sanity</span>
+            <div class="sanity-bar">
+              <div id="sanity-fill" class="sanity-fill" style="width: 100%"></div>
+            </div>
+            <span id="sanity-value" class="stat-value sanity">100</span>
+          </div>
+          
+          <div class="stat">
+            <span class="stat-label">Research</span>
+            <span id="research-value" class="stat-value research">0</span>
+          </div>
+          
+          <div class="stat">
+            <span class="stat-label">Spirits</span>
+            <span id="spirits-value" class="stat-value spirits">0/7</span>
+          </div>
+          
+          <button id="audio-toggle" class="btn" style="padding: 8px 15px; font-size: 1.2rem;">🔊</button>
+        </div>
+      </header>
+      
+      <!-- LEFT SIDEBAR - ALLIES -->
+      <aside class="allies-panel">
+        <h3 class="panel-title">👥 Your Allies</h3>
+        <div id="allies-list" class="allies-list">
+          <div class="flavor-text">No allies recruited yet</div>
+        </div>
+      </aside>
+      
+      <!-- CENTER - MAIN PLAY AREA -->
+      <main class="play-area">
+        <!-- Phase Indicator -->
+        <div id="phase-indicator" class="phase-indicator">
+          <div id="phase-name" class="phase-name">Loading...</div>
+          <div id="phase-description" class="phase-description">Please wait...</div>
+        </div>
+        
+        <!-- Card Selection Grid (for town/spirit select) -->
+        <div id="card-grid" class="card-grid" style="display: none;"></div>
+        
+        <!-- Dice Tray -->
+        <div id="dice-tray" class="dice-tray" style="display: none;">
+          <!-- Dice will be rendered here -->
+        </div>
+        
+        <!-- Roll Info -->
+        <div class="roll-info">
+          <div class="rolls-remaining">
+            Rolls Remaining: <span id="rolls-remaining" class="rolls-count">3</span>
+          </div>
+        </div>
+        
+        <!-- Score Display -->
+        <div id="score-display" class="score-display" style="display: none;">
+          <div class="score-label">Score</div>
+          <div class="score-value">0</div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="btn-group">
+          <button id="roll-btn" class="btn btn-primary" style="display: none;">Roll Dice</button>
+          <button id="confirm-btn" class="btn btn-success" style="display: none;">Confirm</button>
+        </div>
+        
+        <!-- Event Log -->
+        <div id="event-log" class="event-log">
+          <div class="log-entry info">Welcome to the investigation...</div>
+        </div>
+      </main>
+      
+      <!-- RIGHT SIDEBAR - SPIRIT/INFO -->
+      <aside class="info-panel">
+        <h3 class="panel-title">👻 Current Spirit</h3>
+        <div id="spirit-display" class="spirit-display" style="display: none;">
+          <!-- Spirit info will be rendered here -->
+        </div>
+        <div id="no-spirit" class="flavor-text" style="padding: 20px; text-align: center;">
+          No spirit selected. Gather research to discover which ancestor haunts Derek...
+        </div>
+      </aside>
+      
+    </div>
+    
+    <!-- MODAL OVERLAY -->
+    <div id="modal-overlay" class="modal-overlay" style="display: none;">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Modal Title</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <!-- Modal content here -->
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <!-- Game Scripts -->
+  <script type="module">
+    import { game } from './js/core/game.js';
+    import { ui } from './js/core/ui.js';
+    import { audio } from './js/core/audio.js';
+    
+    // Make game globally accessible for debugging
+    window.game = game;
+    window.ui = ui;
+    window.audio = audio;
+    
+    // Initialize UI when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      ui.init();
+    });
+  </script>
+</body>
+</html>
