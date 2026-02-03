@@ -86,7 +86,7 @@ export const NODE_TYPES = {
   }
 };
 
-// Location themes - visual/narrative flavor for nodes
+// Location themes - visual/narrative flavor for nodes (predictable tiers)
 export const LOCATION_THEMES = {
   home: { name: 'Your House', icon: '🏠', atmosphere: 'safe' },
   school: { name: 'Blackwood High', icon: '🏫', atmosphere: 'eerie' },
@@ -100,24 +100,29 @@ export const LOCATION_THEMES = {
   church: { name: 'Old Church', icon: '⛪', atmosphere: 'sacred' },
   cemetery: { name: 'Cemetery', icon: '🪦', atmosphere: 'terrifying' },
   occult: { name: 'Occult Shop', icon: '🔮', atmosphere: 'mystical' },
-  mall: { name: 'Abandoned Mall', icon: '🏬', atmosphere: 'eerie' },
+  mall: { name: 'Blackwood Mall', icon: '🏬', atmosphere: 'eerie' },
   townHall: { name: 'Town Hall', icon: '🏛️', atmosphere: 'imposing' },
   mansion: { name: 'Blackwood Manor', icon: '🏚️', atmosphere: 'haunted' },
   hospital: { name: 'Old Hospital', icon: '🏥', atmosphere: 'creepy' },
   theater: { name: 'Rialto Theater', icon: '🎭', atmosphere: 'dramatic' },
+  movieTheatre: { name: 'Blackwood Cineplex', icon: '🎬', atmosphere: 'eerie' },
+  bowlingAlley: { name: 'Lucky Strikes', icon: '🎳', atmosphere: 'retro' },
+  comicStore: { name: 'Comic Crypt', icon: '📚', atmosphere: 'nerdy' },
+  courthouse: { name: 'County Courthouse', icon: '⚖️', atmosphere: 'imposing' },
   gasStation: { name: 'Gas Station', icon: '⛽', atmosphere: 'isolated' },
   forest: { name: 'Whispering Woods', icon: '🌲', atmosphere: 'mysterious' }
 };
 
-// Tier definitions - what can appear at each depth
+// Tier definitions — fixed locations per tier for predictable challenge levels
 export const TIER_CONFIG = {
-  0: { // Start
-    nodeCount: 1,
-    types: ['start'],
-    themes: ['home'],
+  0: { // Start: Home only
+    fixed: true,
+    fixedNodes: [
+      { type: 'start', theme: 'home', name: 'Home' }
+    ],
     difficulty: 0
   },
-  1: { // FIXED: Always exactly 2 locations adjacent to Home — School + Best Friend's House
+  1: { // Tier 1: School + Best Friend's House — easy level 1 (recruit or items/currency/upgrades)
     fixed: true,
     fixedNodes: [
       { type: 'research', theme: 'school', name: 'Blackwood High' },
@@ -125,38 +130,50 @@ export const TIER_CONFIG = {
     ],
     difficulty: 1
   },
-  2: { // Building up - 3-4 nodes
-    nodeCount: { min: 3, max: 4 },
-    types: ['research', 'store', 'recruit', 'rest', 'mystery'],
-    weights: { research: 30, store: 20, recruit: 20, rest: 15, mystery: 15 },
-    themes: ['library', 'diner', 'alley', 'store'],
+  2: { // Tier 2: Downtown — movie theatre, mall, bowling alley, comic store, diner
+    fixed: true,
+    fixedNodes: [
+      { type: 'research', theme: 'movieTheatre', name: 'Blackwood Cineplex' },
+      { type: 'store', theme: 'mall', name: 'Blackwood Mall' },
+      { type: 'rest', theme: 'bowlingAlley', name: 'Lucky Strikes' },
+      { type: 'store', theme: 'comicStore', name: 'Comic Crypt' },
+      { type: 'rest', theme: 'diner', name: 'Midnight Diner' }
+    ],
     difficulty: 2
   },
-  3: { // Mid game - 3-4 nodes
-    nodeCount: { min: 3, max: 4 },
-    types: ['research', 'elite', 'store', 'recruit', 'rest'],
-    weights: { research: 25, elite: 20, store: 20, recruit: 20, rest: 15 },
-    themes: ['church', 'mall', 'occult', 'theater'],
+  3: { // Tier 3: Civic — town hall, courthouse, library
+    fixed: true,
+    fixedNodes: [
+      { type: 'elite', theme: 'townHall', name: 'Town Hall' },
+      { type: 'research', theme: 'courthouse', name: 'County Courthouse' },
+      { type: 'research', theme: 'library', name: 'Public Library' }
+    ],
     difficulty: 3
   },
-  4: { // Late game - 2-3 nodes
-    nodeCount: { min: 2, max: 3 },
-    types: ['elite', 'research', 'rest', 'spirit'],
-    weights: { elite: 30, research: 25, rest: 25, spirit: 20 },
-    themes: ['townHall', 'cemetery', 'hospital', 'gasStation'],
+  4: { // Tier 4: Dark places — church, cemetery, hospital, occult shop
+    fixed: true,
+    fixedNodes: [
+      { type: 'rest', theme: 'church', name: 'Old Church' },
+      { type: 'spirit', theme: 'cemetery', name: 'Cemetery' },
+      { type: 'research', theme: 'hospital', name: 'Old Hospital' },
+      { type: 'store', theme: 'occult', name: 'Occult Shop' }
+    ],
     difficulty: 4
   },
-  5: { // Pre-boss - 1-2 nodes
-    nodeCount: { min: 1, max: 2 },
-    types: ['rest', 'store', 'spirit'],
-    weights: { rest: 40, store: 30, spirit: 30 },
-    themes: ['forest', 'mansion'],
+  5: { // Tier 5: Edge of town — forest, gas station, manor gates
+    fixed: true,
+    fixedNodes: [
+      { type: 'mystery', theme: 'forest', name: 'Whispering Woods' },
+      { type: 'rest', theme: 'gasStation', name: 'Gas Station' },
+      { type: 'spirit', theme: 'mansion', name: 'Manor Gates' }
+    ],
     difficulty: 5
   },
   6: { // Boss
-    nodeCount: 1,
-    types: ['boss'],
-    themes: ['mansion'],
+    fixed: true,
+    fixedNodes: [
+      { type: 'boss', theme: 'mansion', name: 'Blackwood Manor' }
+    ],
     difficulty: 6
   }
 };

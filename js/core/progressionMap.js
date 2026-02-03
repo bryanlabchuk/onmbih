@@ -85,9 +85,9 @@ export class ProgressionMap {
       0: { name: 'Home' },
       1: { name: "School & Best Friend's House" },
       2: { name: 'Downtown' },
-      3: { name: 'Outskirts' },
+      3: { name: 'Civic' },
       4: { name: 'Dark Places' },
-      5: { name: 'The Edge' },
+      5: { name: 'Edge of Town' },
       6: { name: 'Blackwood Manor' }
     };
   }
