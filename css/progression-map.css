@@ -111,7 +111,7 @@
   transition: stroke 0.3s ease, stroke-width 0.3s ease;
 }
 
-.connection-path.locked {
+.connection-path.upcoming {
   stroke: rgba(92, 88, 80, 0.3);
   stroke-dasharray: 8, 8;
 }
@@ -301,14 +301,14 @@
 }
 
 /* Node States */
-.map-node.locked {
-  opacity: 0.4;
-  cursor: not-allowed;
-  filter: grayscale(0.5);
+.map-node.upcoming {
+  opacity: 0.5;
+  cursor: default;
+  filter: grayscale(0.4);
 }
 
-.map-node.locked .node-icon {
-  filter: grayscale(1);
+.map-node.upcoming .node-icon {
+  filter: grayscale(0.6);
 }
 
 .map-node.available {
@@ -436,7 +436,7 @@
   border-color: var(--spirit-green);
 }
 
-.state-dot.locked {
+.state-dot.upcoming {
   border-color: var(--text-muted);
   opacity: 0.5;
 }
@@ -480,52 +480,16 @@
   border: 1px solid var(--border-color);
 }
 
-.preview-tier-badge.unlocked {
-  background: rgba(74, 155, 106, 0.2);
-  color: var(--spirit-green);
-  border-color: var(--spirit-green);
-}
-
-.preview-tier-badge.locked {
-  background: rgba(201, 74, 74, 0.2);
-  color: var(--blood-red);
-  border-color: var(--blood-red);
-}
-
-/* Locked preview details */
-.preview-locked {
+/* Upcoming location message (visit previous tier first) */
+.preview-upcoming {
   text-align: center;
-  padding: 15px;
+  padding: 12px 15px;
   background: var(--bg-dark);
   border-radius: var(--border-radius);
   margin: 10px 0;
-}
-
-.preview-locked .lock-icon {
-  font-size: 2rem;
-  margin-bottom: 8px;
-}
-
-.preview-locked .lock-text {
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-  color: var(--blood-red);
-  margin-bottom: 5px;
-}
-
-.preview-locked .lock-requirement {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.preview-locked .lock-progress {
-  display: inline-block;
-  padding: 4px 12px;
-  background: var(--bg-medium);
-  border-radius: 15px;
   font-size: 0.85rem;
-  color: var(--candle-orange);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
 }
 
 .preview-icon {
@@ -614,7 +578,7 @@
 }
 
 .preview-completed,
-.preview-locked {
+.preview-upcoming {
   padding: 15px;
   text-align: center;
   font-size: 0.85rem;
@@ -625,7 +589,7 @@
   color: var(--spirit-green);
 }
 
-.preview-locked {
+.preview-upcoming {
   background: rgba(92, 88, 80, 0.1);
   color: var(--text-muted);
 }
